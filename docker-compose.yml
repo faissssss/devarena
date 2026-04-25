@@ -1,0 +1,52 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: devarena
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    image: node:20-alpine
+    working_dir: /workspace
+    command: sh -c "npm install && npm run dev --workspace=backend"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/devarena
+      JWT_SECRET: your-secret-key-here-minimum-32-characters-long
+      PORT: 3000
+      CORS_ORIGIN: http://localhost:5173
+      KONTESTS_API_URL: https://kontests.net/api/v1/all
+      CLIST_API_URL: https://clist.by/api/v2/contest/
+      CLIST_API_KEY: dev-clist-key
+      KAGGLE_API_KEY: dev-kaggle-key
+      KAGGLE_USERNAME: dev-kaggle-user
+      SYNC_SCHEDULE: 0 */6 * * *
+      SYNC_TIMEOUT: 30000
+      SYNC_RETRIES: 3
+      NODE_ENV: development
+    ports:
+      - '3000:3000'
+    volumes:
+      - .:/workspace
+    depends_on:
+      - postgres
+
+  frontend:
+    image: node:20-alpine
+    working_dir: /workspace
+    command: sh -c "npm install && npm run dev --workspace=frontend -- --host 0.0.0.0"
+    ports:
+      - '5173:5173'
+    volumes:
+      - .:/workspace
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
