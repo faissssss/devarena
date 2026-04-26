@@ -42,11 +42,33 @@ export const authApi = {
 
 export const competitionApi = {
   async list(params) {
-    const response = await api.get('/competitions', { params });
+    // Convert date objects to ISO strings if present
+    const queryParams = { ...params };
+    if (queryParams.startDate instanceof Date) {
+      queryParams.startDate = queryParams.startDate.toISOString().split('T')[0];
+    }
+    if (queryParams.endDate instanceof Date) {
+      queryParams.endDate = queryParams.endDate.toISOString().split('T')[0];
+    }
+    if (queryParams.singleDate instanceof Date) {
+      queryParams.singleDate = queryParams.singleDate.toISOString().split('T')[0];
+    }
+    // Convert platforms array to comma-separated string
+    if (Array.isArray(queryParams.platforms) && queryParams.platforms.length > 0) {
+      queryParams.platforms = queryParams.platforms.join(',');
+    } else if (Array.isArray(queryParams.platforms)) {
+      delete queryParams.platforms;
+    }
+    
+    const response = await api.get('/competitions', { params: queryParams });
     return response.data;
   },
   async getById(id) {
     const response = await api.get(`/competitions/${id}`);
+    return response.data;
+  },
+  async getPlatforms() {
+    const response = await api.get('/competitions/platforms');
     return response.data;
   },
 };

@@ -90,9 +90,9 @@ export default function LandingPage() {
                   background: 'var(--color-accent)',
                   color: '#fff',
                   padding: '11px 22px',
-                  borderRadius: 9999,
+                  borderRadius: 6,
                   fontSize: '0.8125rem',
-                  letterSpacing: '0.18em',
+                  fontWeight: 500,
                 }}
               >
                 Explore competitions
@@ -105,9 +105,9 @@ export default function LandingPage() {
                   color: 'rgba(254,249,240,0.80)',
                   border: '1px solid rgba(254,249,240,0.25)',
                   padding: '11px 22px',
-                  borderRadius: 9999,
+                  borderRadius: 6,
                   fontSize: '0.8125rem',
-                  letterSpacing: '0.18em',
+                  fontWeight: 500,
                 }}
               >
                 Create account

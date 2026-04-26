@@ -18,7 +18,14 @@ DevArena is a full-stack web application that aggregates real-time developer com
 - **API_Source**: External data provider (Kontests.net, CLIST.by, or Kaggle API)
 - **Sync_Log**: A record of data synchronization attempts and results
 - **JWT_Token**: JSON Web Token used for user session management
-- **Category**: Competition classification (Competitive Programming, Hackathons, AI/Data Science, CTF/Security)
+- **Category**: Competition classification (Competitive Programming, Hackathons, AI/Data Science, CTF/Security, Web3/Blockchain, Game Development, Mobile Development, Design/UI/UX, Cloud/DevOps, Other)
+- **Platform**: The actual competition hosting platform (LeetCode, CodeForces, Kaggle, HackerRank, etc.)
+- **Date_Picker**: A calendar UI component allowing users to select specific dates or date ranges for filtering
+- **Multi_Select_Filter**: A filter control allowing selection of multiple options simultaneously
+- **Category_Inference_Engine**: The system component that analyzes competition content to automatically assign appropriate categories
+- **API_Response_Parser**: The parser component that transforms external API responses into the unified Competition schema
+- **Configuration_Parser**: The parser component that loads and validates environment configuration from .env files
+- **Configuration_Formatter**: The formatter component that serializes configuration objects back to .env format
 
 ## Requirements
 
@@ -45,12 +52,16 @@ DevArena is a full-stack web application that aggregates real-time developer com
 #### Acceptance Criteria
 
 1. THE DevArena_System SHALL store Competition records with fields: id, title, description, category, platform, url, start_date, end_date, status, location, prize, difficulty, source
-2. THE DevArena_System SHALL classify competitions into exactly one Category: Competitive Programming, Hackathons, AI/Data Science, or CTF/Security
+2. THE DevArena_System SHALL classify competitions into exactly one Category: Competitive Programming, Hackathons, AI/Data Science, CTF/Security, Web3/Blockchain, Game Development, Mobile Development, Design/UI/UX, Cloud/DevOps, or Other
 3. WHEN a Competition start_date is in the future, THE DevArena_System SHALL set status to "upcoming"
 4. WHEN a Competition start_date has passed and end_date is in the future, THE DevArena_System SHALL set status to "ongoing"
 5. WHEN a Competition end_date has passed, THE DevArena_System SHALL set status to "ended"
 6. THE DevArena_System SHALL support competitions from at least 10 distinct platforms
 7. THE Competition_Aggregator SHALL preserve the original source URL for each Competition
+8. THE DevArena_System SHALL store the actual competition platform name (LeetCode, CodeForces, Kaggle, HackerRank, etc.) in the platform field
+9. THE DevArena_System SHALL store the API source name (kontests, clist, kaggle) in the source field for internal tracking
+10. WHEN displaying competitions, THE DevArena_System SHALL show the platform field to users, not the source field
+11. THE DevArena_System SHALL categorize competitions based on their content, platform, and tags to ensure accurate Category assignment
 
 ### Requirement 3: User Authentication and Authorization
 
@@ -88,15 +99,20 @@ DevArena is a full-stack web application that aggregates real-time developer com
 #### Acceptance Criteria
 
 1. WHEN a user applies a category filter, THE Filter_Engine SHALL return only Competitions matching the selected Category
-2. WHEN a user applies a status filter, THE Filter_Engine SHALL return only Competitions matching the selected status (upcoming, ongoing, ended)
-3. WHEN a user applies a location filter, THE Filter_Engine SHALL return only Competitions matching the specified location or "online"
-4. WHEN a user applies a deadline filter, THE Filter_Engine SHALL return only Competitions with end_date within the specified time range
-5. WHEN a user applies a prize filter, THE Filter_Engine SHALL return only Competitions with prize values meeting the specified criteria
-6. WHEN a user applies a difficulty filter, THE Filter_Engine SHALL return only Competitions matching the selected difficulty level
-7. WHEN a user applies a source filter, THE Filter_Engine SHALL return only Competitions from the selected API_Source
-8. WHEN a user applies multiple filters simultaneously, THE Filter_Engine SHALL return Competitions matching all filter criteria (AND logic)
-9. WHEN a user submits a search query, THE Filter_Engine SHALL return Competitions with title or description containing the query text
-10. THE Filter_Engine SHALL support case-insensitive text search
+2. THE DevArena_System SHALL support the following Categories: Competitive Programming, Hackathons, AI/Data Science, CTF/Security, Web3/Blockchain, Game Development, Mobile Development, Design/UI/UX, Cloud/DevOps, Other
+3. WHEN a user applies a status filter, THE Filter_Engine SHALL return only Competitions matching the selected status (upcoming, ongoing, ended)
+4. WHEN a user applies a location filter, THE Filter_Engine SHALL return only Competitions matching the specified location or "online"
+5. WHEN a user selects a date filter, THE Filter_Engine SHALL return only Competitions with start_date or end_date within the specified date range
+6. WHEN a user selects a single date, THE Filter_Engine SHALL return Competitions occurring on that date
+7. WHEN a user selects a date range, THE Filter_Engine SHALL return Competitions with start_date or end_date falling within the range
+8. WHEN a user applies a prize filter, THE Filter_Engine SHALL return only Competitions with prize values meeting the specified criteria
+9. WHEN a user applies a difficulty filter, THE Filter_Engine SHALL return only Competitions matching the selected difficulty level
+10. WHEN a user applies a platform filter, THE Filter_Engine SHALL return only Competitions from the selected platforms
+11. THE DevArena_System SHALL support multi-select platform filtering allowing users to select multiple platforms simultaneously
+12. THE DevArena_System SHALL display actual competition platforms (LeetCode, CodeForces, Kaggle, HackerRank, etc.) rather than API source names (kontests, clist, kaggle)
+13. WHEN a user applies multiple filters simultaneously, THE Filter_Engine SHALL return Competitions matching all filter criteria (AND logic)
+14. WHEN a user submits a search query, THE Filter_Engine SHALL return Competitions with title or description containing the query text
+15. THE Filter_Engine SHALL support case-insensitive text search
 
 ### Requirement 6: User Dashboard
 
@@ -161,6 +177,13 @@ DevArena is a full-stack web application that aggregates real-time developer com
 8. WHEN a User applies filters on the Explore page, THE DevArena_System SHALL update the Competition list without full page reload
 9. THE DevArena_System SHALL use React with Vite for frontend framework
 10. THE DevArena_System SHALL use TailwindCSS for styling
+11. WHEN displaying a Competition, THE DevArena_System SHALL show the actual platform name (LeetCode, CodeForces, Kaggle, etc.) not the API source
+12. WHEN displaying a Competition location, THE DevArena_System SHALL clearly indicate if the competition is "Online" or "On-site"
+13. WHEN displaying a Competition in search results or cards, THE DevArena_System SHALL include the competition description
+14. THE DevArena_System SHALL provide a date picker calendar UI for date filtering on the Explore page
+15. WHEN a User selects a date or date range in the calendar, THE Filter_Engine SHALL filter competitions accordingly
+16. THE DevArena_System SHALL provide a multi-select platform filter allowing selection of multiple platforms simultaneously
+17. THE DevArena_System SHALL display platform options based on actual competition platforms (LeetCode, CodeForces, Kaggle, HackerRank, etc.) not API sources
 
 ### Requirement 10: Database Schema and Integrity
 
@@ -207,3 +230,23 @@ DevArena is a full-stack web application that aggregates real-time developer com
 6. THE API_Response_Parser SHALL map source-specific field names to the unified Competition schema
 7. THE API_Response_Parser SHALL normalize date formats from different sources into ISO 8601 format
 8. FOR ALL valid Competition objects, serializing to JSON then parsing SHALL produce an equivalent Competition object (round-trip property)
+
+### Requirement 13: Category Inference and Platform Mapping
+
+**User Story:** As a platform operator, I want competitions to be automatically categorized based on their content, so that users can filter by relevant categories.
+
+#### Acceptance Criteria
+
+1. WHEN a Competition is parsed from an API_Source, THE Category_Inference_Engine SHALL analyze the platform name, tags, and description to determine the appropriate Category
+2. THE Category_Inference_Engine SHALL classify competitions containing keywords "kaggle", "machine learning", "data", "ai", "neural", "model" into AI/Data Science
+3. THE Category_Inference_Engine SHALL classify competitions containing keywords "hackathon", "devpost", "mlh" into Hackathons
+4. THE Category_Inference_Engine SHALL classify competitions containing keywords "ctf", "security", "pwn", "crypto", "forensics" into CTF/Security
+5. THE Category_Inference_Engine SHALL classify competitions containing keywords "web3", "blockchain", "ethereum", "solidity", "smart contract" into Web3/Blockchain
+6. THE Category_Inference_Engine SHALL classify competitions containing keywords "game dev", "unity", "unreal", "godot", "game jam" into Game Development
+7. THE Category_Inference_Engine SHALL classify competitions containing keywords "mobile", "android", "ios", "flutter", "react native" into Mobile Development
+8. THE Category_Inference_Engine SHALL classify competitions containing keywords "design", "ui", "ux", "figma", "prototype" into Design/UI/UX
+9. THE Category_Inference_Engine SHALL classify competitions containing keywords "cloud", "devops", "aws", "azure", "kubernetes", "docker" into Cloud/DevOps
+10. WHEN a Competition does not match any specific category keywords, THE Category_Inference_Engine SHALL assign it to Competitive Programming as the default
+11. WHEN a Competition matches multiple category keywords, THE Category_Inference_Engine SHALL assign it to the most specific matching category
+12. THE API_Response_Parser SHALL extract and store the actual platform name (LeetCode, CodeForces, Kaggle, HackerRank, etc.) in the platform field
+13. THE API_Response_Parser SHALL store the API source identifier (kontests, clist, kaggle) in the source field for internal tracking

@@ -77,4 +77,91 @@ describe('filterEngine', () => {
       limit: 10,
     });
   });
+
+  test('buildDateRangeFilter creates correct SQL for date range', () => {
+    const params = [];
+    const sql = filterEngine.buildDateRangeFilter('2024-03-01', '2024-03-31', params);
+    
+    expect(sql).toBe(
+      '((start_date BETWEEN $1 AND $2) OR (end_date BETWEEN $1 AND $2) OR (start_date <= $1 AND end_date >= $2))'
+    );
+    expect(params).toEqual(['2024-03-01', '2024-03-31']);
+  });
+
+  test('buildDateRangeFilter handles existing params correctly', () => {
+    const params = ['existing-param'];
+    const sql = filterEngine.buildDateRangeFilter('2024-03-01', '2024-03-31', params);
+    
+    expect(sql).toBe(
+      '((start_date BETWEEN $2 AND $3) OR (end_date BETWEEN $2 AND $3) OR (start_date <= $2 AND end_date >= $3))'
+    );
+    expect(params).toEqual(['existing-param', '2024-03-01', '2024-03-31']);
+  });
+
+  test('buildSingleDateFilter creates correct SQL for single date', () => {
+    const params = [];
+    const sql = filterEngine.buildSingleDateFilter('2024-03-15', params);
+    
+    expect(sql).toBe('(start_date <= $1 AND end_date >= $1)');
+    expect(params).toEqual(['2024-03-15']);
+  });
+
+  test('buildSingleDateFilter handles existing params correctly', () => {
+    const params = ['existing-param'];
+    const sql = filterEngine.buildSingleDateFilter('2024-03-15', params);
+    
+    expect(sql).toBe('(start_date <= $2 AND end_date >= $2)');
+    expect(params).toEqual(['existing-param', '2024-03-15']);
+  });
+
+  test('buildFilterQuery includes single date filter when singleDate is provided', () => {
+    const result = filterEngine.buildFilterQuery({ singleDate: '2024-03-15' });
+    
+    expect(result.whereClause).toContain('start_date <= $');
+    expect(result.whereClause).toContain('end_date >= $');
+    expect(result.params).toContain('2024-03-15');
+  });
+
+  test('buildFilterQuery includes date range filter when startDate and endDate are provided', () => {
+    const result = filterEngine.buildFilterQuery({ 
+      startDate: '2024-03-01', 
+      endDate: '2024-03-31' 
+    });
+    
+    expect(result.whereClause).toContain('start_date BETWEEN');
+    expect(result.whereClause).toContain('end_date BETWEEN');
+    expect(result.params).toContain('2024-03-01');
+    expect(result.params).toContain('2024-03-31');
+  });
+
+  test('buildFilterQuery prioritizes singleDate over date range', () => {
+    const result = filterEngine.buildFilterQuery({ 
+      singleDate: '2024-03-15',
+      startDate: '2024-03-01', 
+      endDate: '2024-03-31' 
+    });
+    
+    // Should use singleDate filter, not date range
+    expect(result.whereClause).toContain('start_date <= $');
+    expect(result.whereClause).toContain('end_date >= $');
+    expect(result.whereClause).not.toContain('BETWEEN');
+    expect(result.params).toContain('2024-03-15');
+    expect(result.params).not.toContain('2024-03-01');
+  });
+
+  test('buildFilterQuery combines date filter with other filters', () => {
+    const result = filterEngine.buildFilterQuery({ 
+      category: 'Hackathons',
+      status: 'upcoming',
+      singleDate: '2024-03-15'
+    });
+    
+    expect(result.whereClause).toContain('category = $');
+    expect(result.whereClause).toContain('status = $');
+    expect(result.whereClause).toContain('start_date <= $');
+    expect(result.whereClause).toContain('end_date >= $');
+    expect(result.params).toEqual(
+      expect.arrayContaining(['Hackathons', 'upcoming', '2024-03-15'])
+    );
+  });
 });

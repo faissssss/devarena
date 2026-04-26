@@ -20,12 +20,12 @@ import dotenv from 'dotenv';
 
 const { Pool } = pg;
 
-// Load environment variables
-dotenv.config();
-
 // Get current directory (ESM equivalent of __dirname)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Load environment variables from root .env
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 // Database connection
 const pool = new Pool({

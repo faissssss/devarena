@@ -24,15 +24,17 @@ function buildClistRequestConfig() {
     config.params.api_key = process.env.CLIST_API_KEY;
   }
 
-  // Filter for recent and upcoming contests (last 7 days to next 180 days)
+  // Filter for competitions (last 365 days to next 365 days)
   const now = new Date();
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const oneEightyDaysFromNow = new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000);
+  const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+  const oneYearFromNow = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
   
-  config.params.start__gte = sevenDaysAgo.toISOString();
-  config.params.start__lte = oneEightyDaysFromNow.toISOString();
+  config.params.start__gte = oneYearAgo.toISOString();
+  config.params.start__lte = oneYearFromNow.toISOString();
   config.params.order_by = 'start';
   config.params.limit = 500; // Get more contests
+  config.params.with_problems = 'false'; // Don't include problems to reduce response size
+  // DO NOT use format_time=true - it returns dates in DD.MM format which our parser misinterprets
 
   return config;
 }

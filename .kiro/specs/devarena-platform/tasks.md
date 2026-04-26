@@ -34,6 +34,13 @@ The implementation follows a bottom-up approach: database → backend services �
     - Parse DATABASE_URL from environment variables
     - Add connection error handling and retry logic
     - _Requirements: 11.7_
+  
+  - [x] 2.3 Create database migration for 10-category support
+    - Write SQL migration to update competitions table category constraint
+    - Add new categories: Web3/Blockchain, Game Development, Mobile Development, Design/UI/UX, Cloud/DevOps, Other
+    - Update existing category constraint to include all 10 categories
+    - Create migration file: backend/migrations/005_update_category_constraint.sql
+    - _Requirements: 2.2, 5.2, 13.1, 13.2, 13.3, 13.4, 13.5, 13.6, 13.7, 13.8, 13.9_
 
 - [ ] 3. Configuration parser and environment management
   - [x] 3.1 Implement configuration parser
@@ -96,52 +103,73 @@ The implementation follows a bottom-up approach: database → backend services �
     - Return ISO 8601 format (YYYY-MM-DDTHH:mm:ssZ)
     - _Requirements: 12.7_
   
-  - [x] 5.2 Implement category inference
-    - Create inferCategory function with platform/tag heuristics
-    - Map platforms to categories (CodeForces→Competitive Programming, Kaggle→AI/Data Science, etc.)
-    - Default to Competitive Programming
-    - _Requirements: 2.2_
+  - [x] 5.2 Implement Category Inference Engine
+    - Create categoryInferenceEngine.js module in backend/src/services/
+    - Implement inferCategory function with keyword-based classification
+    - Define CATEGORY_KEYWORDS object with all 10 categories and their keywords
+    - Implement priority-based category selection (Web3/Blockchain highest, Other lowest)
+    - Support case-insensitive keyword matching
+    - Analyze platform name, title, description, and tags
+    - Default to 'Other' category when no keywords match
+    - _Requirements: 2.2, 2.11, 13.1, 13.2, 13.3, 13.4, 13.5, 13.6, 13.7, 13.8, 13.9, 13.10, 13.11_
   
-  - [x] 5.3 Implement Kontests.net parser
+  - [ ]* 5.3 Write unit tests for Category Inference Engine
+    - Test case-insensitive keyword matching
+    - Test priority-based category selection when multiple keywords match
+    - Test default to 'Other' when no keywords match
+    - Test all 10 categories with representative keywords
+    - Test Web3/Blockchain keywords take priority
+    - Test Game Development, Mobile Development, Design/UI/UX, Cloud/DevOps keywords
+    - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5, 13.6, 13.7, 13.8, 13.9, 13.10, 13.11_
+  
+  - [x] 5.4 Implement Kontests.net parser
     - Create parseKontestsResponse function
     - Map fields: name→title, url→url, start_time→start_date, end_time→end_date, site→platform
     - Set source='kontests' and infer category
     - Handle invalid JSON with descriptive errors
     - _Requirements: 12.1, 12.4, 12.6_
   
-  - [x] 5.4 Implement CLIST.by parser
+  - [x] 5.5 Implement CLIST.by parser
     - Create parseCLISTResponse function
     - Map fields: event→title, href→url, start→start_date, end→end_date, resource.name→platform
     - Set source='clist' and infer category from tags
     - Handle invalid JSON with descriptive errors
     - _Requirements: 12.2, 12.4, 12.6_
   
-  - [x] 5.5 Implement Kaggle parser
+  - [x] 5.6 Implement Kaggle parser
     - Create parseKaggleResponse function
     - Map fields: title→title, url→url, deadline→end_date, category→category, reward→prize
     - Set source='kaggle' and platform='Kaggle'
     - Handle invalid JSON with descriptive errors
     - _Requirements: 12.3, 12.4, 12.6_
   
-  - [x] 5.6 Write property test for invalid JSON handling
+  - [x] 5.7 Integrate Category Inference Engine with API Response Parser
+    - Update parseKontestsResponse to call Category Inference Engine
+    - Update parseCLISTResponse to call Category Inference Engine
+    - Update parseKaggleResponse to call Category Inference Engine
+    - Pass platform, title, description, and tags to inferCategory function
+    - Store inferred category in competition object
+    - _Requirements: 2.11, 12.1, 12.2, 12.3, 13.12, 13.13_
+  
+  - [x] 5.8 Write property test for invalid JSON handling
     - **Property 3: Invalid JSON Error Handling**
     - **Validates: Requirements 12.4**
     - Test that invalid JSON produces descriptive errors without throwing exceptions
     - Use fast-check to generate invalid JSON strings
   
-  - [x] 5.7 Write property test for missing fields handling
+  - [x] 5.9 Write property test for missing fields handling
     - **Property 4: Missing Fields Handling**
     - **Validates: Requirements 12.5**
     - Test that missing optional fields are handled with defaults or warnings
     - Use fast-check to generate competitions with missing fields
   
-  - [x] 5.8 Write property test for date normalization
+  - [x] 5.10 Write property test for date normalization
     - **Property 5: Date Format Normalization**
     - **Validates: Requirements 12.7**
     - Test that various date formats normalize to ISO 8601
     - Use fast-check to generate Unix timestamps, ISO 8601, and RFC 2822 dates
   
-  - [x] 5.9 Write property test for competition JSON round-trip
+  - [x] 5.11 Write property test for competition JSON round-trip
     - **Property 6: Competition JSON Round-Trip Preservation**
     - **Validates: Requirements 12.8**
     - Test that serializing to JSON then parsing preserves all fields
@@ -237,13 +265,46 @@ The implementation follows a bottom-up approach: database → backend services �
     - Execute query and return { competitions, totalCount, totalPages }
     - _Requirements: 8.3_
   
-  - [x]* 9.3 Write unit tests for filter engine
+  - [x] 9.3 Enhance filter engine with date range filtering
+    - Implement buildDateRangeFilter function for date range queries
+    - Support startDate and endDate parameters (competitions overlapping with range)
+    - SQL: (start_date BETWEEN startDate AND endDate) OR (end_date BETWEEN startDate AND endDate) OR (start_date <= startDate AND end_date >= endDate)
+    - Implement buildSingleDateFilter function for single date queries
+    - Support singleDate parameter (competitions active on specific date)
+    - SQL: start_date <= date AND end_date >= date
+    - Update buildFilterQuery to use date filter functions
+    - _Requirements: 5.5, 5.6, 5.7_
+  
+  - [x] 9.4 Enhance filter engine with platform multi-select filtering
+    - Implement buildPlatformFilter function for multi-select platform queries
+    - Support platforms parameter as array of platform names
+    - SQL: platform IN (platform1, platform2, ...)
+    - Use OR logic within platform group (returns competitions from any selected platform)
+    - Update buildFilterQuery to use platform filter function
+    - _Requirements: 5.10, 5.11, 5.12_
+  
+  - [x] 9.5 Implement getAvailablePlatforms function
+    - Query distinct platform values from competitions table
+    - Return sorted list of actual platform names (LeetCode, CodeForces, Kaggle, etc.)
+    - Used to populate multi-select filter options in frontend
+    - _Requirements: 5.12, 9.17_
+  
+  - [x]* 9.6 Write unit tests for filter engine
     - Test single filter produces correct WHERE clause
     - Test multiple filters combine with AND logic
     - Test search query produces case-insensitive ILIKE clause
     - Test pagination calculates correct OFFSET and LIMIT
     - Test empty filters return all competitions
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9, 5.10_
+  
+  - [ ]* 9.7 Write unit tests for enhanced filter engine
+    - Test date range filter produces correct SQL clause
+    - Test single date filter produces correct SQL clause
+    - Test platform multi-select filter produces correct SQL clause with OR logic
+    - Test platform filter with single platform
+    - Test platform filter with multiple platforms
+    - Test combined filters (date range + platforms + category)
+    - _Requirements: 5.5, 5.6, 5.7, 5.10, 5.11, 5.12_
 
 - [ ] 10. REST API endpoints - Authentication
   - [x] 10.1 Implement POST /api/auth/register endpoint
@@ -275,13 +336,24 @@ The implementation follows a bottom-up approach: database → backend services �
     - _Requirements: 7.2_
 
 - [ ] 11. REST API endpoints - Competitions
-  - [x] 11.1 Implement GET /api/competitions endpoint
-    - Accept query parameters: category, status, location, deadline, prize, difficulty, source, search, page, limit
-    - Call filterEngine.executeFilter with query params
+  - [x] 11.1 Update GET /api/competitions endpoint with enhanced filtering
+    - Accept query parameters: category, status, location, startDate, endDate, singleDate, prize, difficulty, platforms (comma-separated), search, page, limit
+    - Update to support all 10 categories
+    - Add date range filtering (startDate + endDate)
+    - Add single date filtering (singleDate)
+    - Add platform multi-select filtering (platforms as comma-separated string)
+    - Call filterEngine.executeFilter with updated query params
     - Return 200 with paginated competitions and pagination metadata
-    - _Requirements: 8.3_
+    - _Requirements: 5.1, 5.2, 5.5, 5.6, 5.7, 5.10, 5.11, 5.12, 8.3_
   
-  - [x] 11.2 Implement GET /api/competitions/:id endpoint
+  - [x] 11.2 Implement GET /api/competitions/platforms endpoint
+    - Create new endpoint to return list of available platforms
+    - Call filterEngine.getAvailablePlatforms
+    - Return 200 with array of distinct platform names sorted alphabetically
+    - Used to populate multi-select platform filter in frontend
+    - _Requirements: 5.12, 9.17_
+  
+  - [x] 11.3 Implement GET /api/competitions/:id endpoint
     - Extract id from route params
     - Query competition by id from database
     - Return 200 with competition object
@@ -438,21 +510,62 @@ The implementation follows a bottom-up approach: database → backend services �
     - _Requirements: 9.1_
 
 - [ ] 19. Frontend - Explore page
-  - [x] 19.1 Create Explore page component
-    - Build filter sidebar with controls for category, status, location, deadline, prize, difficulty, source
+  - [x] 19.1 Update Explore page component with enhanced filters
+    - Update filter sidebar to support all 10 categories
+    - Add Date Picker component for date range selection
+    - Add Platform Multi-Select component for platform filtering
+    - Update category dropdown with new categories: Web3/Blockchain, Game Development, Mobile Development, Design/UI/UX, Cloud/DevOps, Other
+    - Update filter state to include dateRange and selectedPlatforms
     - Build search bar for text queries
     - Build competition card grid
     - Build pagination controls
-    - Implement filter state management
-    - _Requirements: 9.2, 9.8_
+    - _Requirements: 5.2, 5.5, 5.6, 5.7, 5.10, 5.11, 5.16, 9.2, 9.8, 9.14, 9.15, 9.16, 9.17_
   
-  - [x] 19.2 Implement competition fetching and filtering
-    - Call GET /api/competitions with query params on mount and filter changes
+  - [x] 19.2 Create Date Picker component
+    - Create DatePicker.jsx component in frontend/src/components/
+    - Support single date selection mode
+    - Support date range selection mode (click start date, then end date)
+    - Display calendar UI with month/year navigation
+    - Highlight selected dates and show range preview on hover
+    - Add quick select buttons: "Today", "Next 7 days", "Next 30 days", "Clear"
+    - Implement date validation (min/max bounds)
+    - Style with TailwindCSS for responsive layout
+    - _Requirements: 5.5, 5.6, 5.7, 9.14, 9.15_
+  
+  - [x] 19.3 Create Platform Multi-Select component
+    - Create PlatformMultiSelect.jsx component in frontend/src/components/
+    - Display dropdown with checkbox list of platforms
+    - Add search input for filtering platform list
+    - Add "Select All" / "Clear All" buttons
+    - Show selected count badge on trigger button
+    - Fetch available platforms from GET /api/competitions/platforms
+    - Support multi-select with checkboxes
+    - Display actual platform names (LeetCode, CodeForces, Kaggle, etc.)
+    - Style with TailwindCSS for responsive dropdown
+    - _Requirements: 5.10, 5.11, 5.12, 9.16, 9.17_
+  
+  - [x] 19.4 Create/Update Competition Card component
+    - Create or update CompetitionCard.jsx component in frontend/src/components/
+    - Display competition title, category badge, status badge
+    - Display actual platform name (not API source)
+    - Display competition description (truncated to 3 lines)
+    - Display location as "🌐 Online" or "📍 On-site: [location]"
+    - Display date range, prize (if available), difficulty (if available)
+    - Add bookmark button and "View Details" button
+    - Implement category-specific color coding for badges
+    - Style with TailwindCSS and hover effects
+    - _Requirements: 2.8, 2.9, 2.10, 9.11, 9.12, 9.13_
+  
+  - [x] 19.5 Implement enhanced competition fetching and filtering
+    - Update API call to GET /api/competitions with new query params
+    - Support startDate, endDate, singleDate parameters for date filtering
+    - Support platforms parameter (comma-separated) for multi-select filtering
+    - Support all 10 categories in category filter
     - Update competition list without full page reload
     - Handle loading and error states
-    - _Requirements: 8.3, 9.8_
+    - _Requirements: 5.1, 5.2, 5.5, 5.6, 5.7, 5.10, 5.11, 5.12, 8.3, 9.8_
   
-  - [x] 19.3 Implement bookmark toggle on cards
+  - [x] 19.6 Implement bookmark toggle on cards
     - Add bookmark button to each competition card
     - Call POST /api/bookmarks or DELETE /api/bookmarks/:id on click
     - Update UI to reflect bookmark state
@@ -460,15 +573,19 @@ The implementation follows a bottom-up approach: database → backend services �
     - _Requirements: 9.7_
 
 - [ ] 20. Frontend - Detail page
-  - [x] 20.1 Create Detail page component
+  - [x] 20.1 Update Detail page component with enhanced display
     - Extract competitionId from route params
     - Call GET /api/competitions/:id on mount
-    - Display competition title, description, and metadata grid
+    - Display competition title and full description
+    - Display actual platform name (not API source)
+    - Display location as "🌐 Online" or "📍 On-site: [location]"
+    - Display category badge with color coding (all 10 categories)
+    - Display status badge, start/end dates, prize, difficulty
     - Add bookmark button
     - Add external link button to competition.url
     - Style with TailwindCSS
     - Handle loading and error states (404)
-    - _Requirements: 9.3_
+    - _Requirements: 2.8, 2.9, 2.10, 9.3, 9.11, 9.12, 9.13_
   
   - [x] 20.2 Implement bookmark toggle on detail page
     - Call POST /api/bookmarks or DELETE /api/bookmarks/:id on bookmark button click
@@ -553,9 +670,15 @@ The implementation follows a bottom-up approach: database → backend services �
   
   - [x]* 25.3 Write E2E test for competition discovery
     - Navigate to Explore page
-    - Apply category and status filters
+    - Apply category filter (test multiple categories including new ones: Web3/Blockchain, Game Development, etc.)
+    - Apply status filter
+    - Select date range using date picker calendar
+    - Select multiple platforms using multi-select filter
     - Enter search query
     - Verify filtered results
+    - Verify competition cards show platform names (not API sources)
+    - Verify competition cards show descriptions
+    - Verify location displays as "Online" or "On-site"
     - Click competition card and verify detail page loads
   
   - [x]* 25.4 Write E2E test for bookmark management
@@ -607,7 +730,18 @@ The implementation follows a bottom-up approach: database → backend services �
   - [ ] 27.2 Manual testing checklist
     - Verify all three external APIs successfully sync
     - Verify admin can manually trigger sync
+    - Verify all 10 categories correctly assigned by Category Inference Engine
+    - Verify Category Inference Engine uses keyword-based classification
     - Verify filters work in all combinations
+    - Verify date picker allows single date and date range selection
+    - Verify date range filter returns competitions overlapping with range
+    - Verify single date filter returns competitions active on specific date
+    - Verify platform multi-select allows selecting multiple platforms
+    - Verify platform filter uses OR logic (returns competitions from any selected platform)
+    - Verify platform filter displays actual platform names (LeetCode, CodeForces, Kaggle, etc.)
+    - Verify competition cards show platform names (not API sources)
+    - Verify competition cards display descriptions
+    - Verify location displays as "🌐 Online" or "📍 On-site: [location]"
     - Verify bookmarks persist across sessions
     - Verify JWT expiration handled gracefully
     - Verify mobile responsive design
@@ -637,3 +771,40 @@ The implementation follows a bottom-up approach: database → backend services �
 - All code should follow the project's ESLint and Prettier configurations
 - All API endpoints should include proper error handling and validation
 - All frontend components should handle loading and error states gracefully
+
+## New Filtering Enhancement Tasks Summary
+
+The following new tasks have been added to implement comprehensive filtering improvements:
+
+### Database Layer (Task 2.3)
+- **Database Migration**: Update competitions table category constraint to support 10 categories (added Web3/Blockchain, Game Development, Mobile Development, Design/UI/UX, Cloud/DevOps, Other)
+
+### Backend Layer (Tasks 5.2-5.7, 9.3-9.5, 11.1-11.2)
+- **Category Inference Engine** (Task 5.2): Implement keyword-based automatic categorization system with priority-based selection
+- **Category Inference Engine Tests** (Task 5.3): Unit tests for all 10 categories and keyword matching logic
+- **Parser Integration** (Task 5.7): Integrate Category Inference Engine with API Response Parser
+- **Date Range Filtering** (Task 9.3): Implement buildDateRangeFilter and buildSingleDateFilter functions
+- **Platform Multi-Select Filtering** (Task 9.4): Implement buildPlatformFilter function with OR logic
+- **Get Available Platforms** (Task 9.5): Query distinct platform names for filter options
+- **Enhanced Filter Tests** (Task 9.7): Unit tests for date and platform filtering
+- **Update GET /api/competitions** (Task 11.1): Add support for startDate, endDate, singleDate, and platforms parameters
+- **New GET /api/competitions/platforms** (Task 11.2): Return list of available platforms
+
+### Frontend Layer (Tasks 19.1-19.5, 20.1)
+- **Update Explore Page** (Task 19.1): Add Date Picker and Platform Multi-Select components, support 10 categories
+- **Date Picker Component** (Task 19.2): Calendar UI for single date and date range selection
+- **Platform Multi-Select Component** (Task 19.3): Multi-select dropdown with checkboxes for platform filtering
+- **Competition Card Component** (Task 19.4): Display platform names, descriptions, and clear location indicators
+- **Enhanced Filtering** (Task 19.5): Update API calls to support new filtering parameters
+- **Update Detail Page** (Task 20.1): Display platform names, descriptions, and location with proper formatting
+
+### Testing Updates (Tasks 25.3, 27.2)
+- **E2E Test Updates** (Task 25.3): Test new categories, date picker, platform multi-select, and display improvements
+- **Manual Testing Checklist** (Task 27.2): Verify Category Inference Engine, date filtering, platform filtering, and display improvements
+
+### Key Features Implemented
+1. **10 Categories**: Expanded from 4 to 10 categories with automatic classification
+2. **Category Inference Engine**: Keyword-based system for automatic categorization
+3. **Date Picker**: Calendar UI for visual date range selection
+4. **Platform Multi-Select**: Select multiple platforms simultaneously with OR logic
+5. **Display Improvements**: Show actual platform names, descriptions, and clear Online/On-site indicators

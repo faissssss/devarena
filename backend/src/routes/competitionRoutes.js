@@ -1,14 +1,29 @@
 import { Router } from 'express';
 
-import { executeFilter } from '../services/filterEngine.js';
+import { executeFilter, getAvailablePlatforms } from '../services/filterEngine.js';
 import { getCompetitionById } from '../services/competitionService.js';
 
 const router = Router();
 
 router.get('/', async (req, res, next) => {
   try {
-    const result = await executeFilter(req.query);
+    // Parse platforms parameter from comma-separated string to array
+    const filters = { ...req.query };
+    if (filters.platforms && typeof filters.platforms === 'string') {
+      filters.platforms = filters.platforms.split(',').map(p => p.trim()).filter(Boolean);
+    }
+    
+    const result = await executeFilter(filters);
     res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/platforms', async (req, res, next) => {
+  try {
+    const platforms = await getAvailablePlatforms();
+    res.json({ platforms });
   } catch (error) {
     next(error);
   }

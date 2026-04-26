@@ -11,6 +11,8 @@ DevArena is a full-stack web application that aggregates developer competitions 
 
 The platform serves two user roles (user and admin) and integrates with three external competition APIs (Kontests.net, CLIST.by, Kaggle). The core value proposition is providing a single searchable hub for discovering competitions across multiple platforms with personalized bookmarking and comprehensive filtering.
 
+Competitions are automatically classified into 10 categories (Competitive Programming, Hackathons, AI/Data Science, CTF/Security, Web3/Blockchain, Game Development, Mobile Development, Design/UI/UX, Cloud/DevOps, Other) using a keyword-based Category Inference Engine. Users can filter competitions by category, status, location, date range (via calendar picker), multiple platforms (via multi-select), prize, and difficulty.
+
 ### Key Design Principles
 
 - **Separation of Concerns**: Clear boundaries between frontend, backend, data sync, and database layers
@@ -46,6 +48,7 @@ graph TB
         Cron[Node-cron Scheduler]
         Sync[Data Sync Service]
         Parser[API Response Parser]
+        CategoryEngine[Category Inference Engine]
     end
     
     subgraph "Data Layer"
@@ -72,7 +75,8 @@ graph TB
     
     Cron --> Sync
     Sync --> Parser
-    Parser --> Aggregator
+    Parser --> CategoryEngine
+    CategoryEngine --> Aggregator
     Aggregator --> DB
     
     Sync --> Kontests
@@ -95,17 +99,58 @@ graph TB
 1. Node-cron triggers Data Sync Service every 6 hours
 2. Data Sync Service makes parallel requests to all three external APIs
 3. API Response Parser transforms each response to unified Competition schema
-4. Competition Aggregator performs upsert operations (update if exists, insert if new)
-5. Sync Log entry created with timestamp, source, status, and record count
-6. Individual API failures logged but don't block other sources
+4. Category Inference Engine analyzes competition content and assigns appropriate category
+5. Competition Aggregator performs upsert operations (update if exists, insert if new)
+6. Sync Log entry created with timestamp, source, status, and record count
+7. Individual API failures logged but don't block other sources
+
+**Category Inference Flow:**
+```mermaid
+graph LR
+    A[Raw API Data] --> B[API Response Parser]
+    B --> C[Extract: platform, title, description, tags]
+    C --> D[Category Inference Engine]
+    D --> E{Concatenate & Normalize Text}
+    E --> F{Match Keywords}
+    F --> G{Web3/Blockchain?}
+    G -->|Yes| H[Assign: Web3/Blockchain]
+    G -->|No| I{Game Development?}
+    I -->|Yes| J[Assign: Game Development]
+    I -->|No| K{Mobile Development?}
+    K -->|Yes| L[Assign: Mobile Development]
+    K -->|No| M{Design/UI/UX?}
+    M -->|Yes| N[Assign: Design/UI/UX]
+    M -->|No| O{Cloud/DevOps?}
+    O -->|Yes| P[Assign: Cloud/DevOps]
+    O -->|No| Q{AI/Data Science?}
+    Q -->|Yes| R[Assign: AI/Data Science]
+    Q -->|No| S{Hackathons?}
+    S -->|Yes| T[Assign: Hackathons]
+    S -->|No| U{CTF/Security?}
+    U -->|Yes| V[Assign: CTF/Security]
+    U -->|No| W{Competitive Programming?}
+    W -->|Yes| X[Assign: Competitive Programming]
+    W -->|No| Y[Assign: Other]
+    H --> Z[Competition with Category]
+    J --> Z
+    L --> Z
+    N --> Z
+    P --> Z
+    R --> Z
+    T --> Z
+    V --> Z
+    X --> Z
+    Y --> Z
+```
 
 **Competition Filtering Flow:**
-1. User applies filters on Explore page (category, status, location, deadline, prize, difficulty, source)
+1. User applies filters on Explore page (category, status, location, date range, platforms, prize, difficulty)
 2. Frontend sends GET request to `/api/competitions` with query parameters
-3. Filter Engine builds SQL WHERE clause with AND logic for multiple filters
-4. Database executes query using indexes on category, status, and start_date
+3. Filter Engine builds SQL WHERE clause with AND logic for multiple filters (platforms use OR within group)
+4. Database executes query using indexes on category, status, start_date, end_date
 5. Paginated results returned to frontend
 6. Frontend updates UI without full page reload
+7. Competition cards display platform names (actual platforms, not API sources)
 
 **Bookmark Management Flow:**
 1. Authenticated user clicks bookmark button on competition
@@ -147,22 +192,60 @@ graph TB
 - `filters: FilterState` - Active filter selections
 - `loading: boolean` - Loading state
 - `pagination: PaginationState` - Current page and total pages
+- `availablePlatforms: string[]` - List of distinct platforms for multi-select
+- `dateRange: { startDate: Date | null, endDate: Date | null }` - Selected date range
 
 **Key Functions**:
 - `fetchCompetitions(filters, page)`: Calls GET /api/competitions with query params
 - `applyFilter(filterType, value)`: Updates filter state and triggers fetch
 - `clearFilters()`: Resets all filters to default
 - `toggleBookmark(competitionId)`: Calls POST/DELETE /api/bookmarks
+- `handleDateSelect(date)`: Updates single date filter
+- `handleDateRangeSelect(startDate, endDate)`: Updates date range filter
+- `handlePlatformToggle(platform)`: Adds/removes platform from multi-select filter
+- `fetchAvailablePlatforms()`: Calls GET /api/competitions/platforms to populate filter options
 
 **UI Elements**:
-- Filter sidebar (category, status, location, deadline, prize, difficulty, source)
+- Filter sidebar with:
+  - Category dropdown (10 categories: Competitive Programming, Hackathons, AI/Data Science, CTF/Security, Web3/Blockchain, Game Development, Mobile Development, Design/UI/UX, Cloud/DevOps, Other)
+  - Status dropdown (upcoming, ongoing, ended)
+  - Location dropdown (online, on-site, hybrid)
+  - Date picker calendar for single date or date range selection
+  - Prize minimum input
+  - Difficulty dropdown
+  - Platform multi-select checkboxes (LeetCode, CodeForces, Kaggle, HackerRank, etc.)
 - Search bar for text queries
-- Competition card grid
+- Competition card grid displaying:
+  - Title
+  - Platform name (actual platform, not API source)
+  - Description (truncated)
+  - Category badge
+  - Status badge
+  - Start/end dates
+  - Location (clearly marked as "Online" or "On-site")
+  - Prize (if available)
 - Pagination controls
+
+**Date Picker Component**:
+- Calendar UI for visual date selection
+- Supports single date selection
+- Supports date range selection (click start date, then end date)
+- Highlights selected dates
+- Shows current month with navigation arrows
+- Displays active competitions count per day (optional enhancement)
+
+**Platform Multi-Select Component**:
+- Checkbox list of available platforms
+- Search/filter within platform list
+- "Select All" / "Clear All" buttons
+- Shows count of selected platforms
+- Displays actual platform names (LeetCode, CodeForces, Kaggle, HackerRank, Devpost, etc.)
+- NOT API source names (kontests, clist, kaggle)
 
 **API Integration**:
 ```typescript
-GET /api/competitions?category=Hackathons&status=upcoming&page=1&limit=20
+GET /api/competitions?category=Hackathons&status=upcoming&platforms=LeetCode,CodeForces&startDate=2024-03-01&endDate=2024-03-31&page=1&limit=20
+GET /api/competitions/platforms // Returns list of distinct platform names
 ```
 
 ---
@@ -184,10 +267,19 @@ GET /api/competitions?category=Hackathons&status=upcoming&page=1&limit=20
 - `navigateToSource()`: Opens competition.url in new tab
 
 **UI Elements**:
-- Competition title and description
-- Metadata grid (category, platform, status, dates, location, prize, difficulty)
-- Bookmark button
+- Competition title and full description
+- Metadata grid displaying:
+  - Category badge
+  - Platform name (actual platform like "LeetCode", "Kaggle", not API source)
+  - Status badge with color coding
+  - Start date and time
+  - End date and time
+  - Location (clearly marked as "Online" or "On-site: [location]")
+  - Prize information (if available)
+  - Difficulty level (if available)
+- Bookmark button (heart icon with filled/unfilled states)
 - External link button to original competition page
+- Share button (copy link to clipboard)
 
 ---
 
@@ -263,6 +355,163 @@ GET /api/competitions?category=Hackathons&status=upcoming&page=1&limit=20
 - Edit profile form
 - Change password form
 - Account statistics (total bookmarks, account age)
+
+---
+
+#### 7. Competition Card Component
+**Purpose**: Reusable card component for displaying competition summary in lists and grids
+
+**Props**:
+- `competition: Competition` (required)
+- `isBookmarked: boolean` (optional)
+- `onBookmarkToggle: (id: string) => void` (optional)
+- `showDescription: boolean` (default: true)
+
+**State**:
+- None (stateless presentation component)
+
+**UI Elements**:
+- **Header Section**:
+  - Competition title (truncated to 2 lines)
+  - Category badge with color coding
+  - Status badge (upcoming/ongoing/ended)
+- **Content Section**:
+  - Platform name display (actual platform like "LeetCode", "Kaggle", NOT API source)
+  - Description (truncated to 3 lines, with "Read more" link)
+  - Location indicator:
+    - "🌐 Online" for online competitions
+    - "📍 On-site: [location]" for physical competitions
+  - Date range display (start_date - end_date)
+  - Prize display (if available, with 💰 icon)
+  - Difficulty badge (if available)
+- **Footer Section**:
+  - Bookmark button (heart icon)
+  - "View Details" button
+  - External link icon
+
+**Styling**:
+- Card hover effect (subtle elevation)
+- Responsive layout (stacks on mobile, grid on desktop)
+- Category-specific color accents
+- Clear visual hierarchy
+
+**Category Color Coding**:
+```typescript
+const CATEGORY_COLORS = {
+  'Competitive Programming': 'blue',
+  'Hackathons': 'purple',
+  'AI/Data Science': 'green',
+  'CTF/Security': 'red',
+  'Web3/Blockchain': 'indigo',
+  'Game Development': 'pink',
+  'Mobile Development': 'cyan',
+  'Design/UI/UX': 'orange',
+  'Cloud/DevOps': 'teal',
+  'Other': 'gray'
+};
+```
+
+**Location Display Logic**:
+```typescript
+const formatLocation = (location?: string) => {
+  if (!location || location.toLowerCase() === 'online') {
+    return '🌐 Online';
+  }
+  return `📍 On-site: ${location}`;
+};
+```
+
+---
+
+#### 8. Date Picker Component
+**Purpose**: Calendar UI for selecting single dates or date ranges for filtering
+
+**Props**:
+- `mode: 'single' | 'range'` (default: 'range')
+- `selectedDate: Date | null` (for single mode)
+- `selectedRange: { startDate: Date | null, endDate: Date | null }` (for range mode)
+- `onDateSelect: (date: Date) => void` (for single mode)
+- `onRangeSelect: (startDate: Date, endDate: Date) => void` (for range mode)
+- `minDate: Date` (optional, earliest selectable date)
+- `maxDate: Date` (optional, latest selectable date)
+
+**State**:
+- `currentMonth: Date` - Currently displayed month
+- `hoverDate: Date | null` - Date being hovered (for range preview)
+
+**Key Functions**:
+- `navigateMonth(direction: 'prev' | 'next')`: Change displayed month
+- `handleDateClick(date: Date)`: Handle date selection
+- `isDateInRange(date: Date)`: Check if date is within selected range
+- `isDateDisabled(date: Date)`: Check if date is outside min/max bounds
+
+**UI Elements**:
+- Month/year header with navigation arrows
+- Calendar grid (7 columns for days of week)
+- Date cells with:
+  - Current date highlight
+  - Selected date(s) highlight
+  - Range preview on hover
+  - Disabled state for out-of-bounds dates
+- Quick select buttons:
+  - "Today"
+  - "Next 7 days"
+  - "Next 30 days"
+  - "Clear"
+
+**Range Selection Behavior**:
+1. First click: Set start date, clear end date
+2. Second click: Set end date (if after start date)
+3. Hover: Show preview of range between start and hovered date
+4. Third click: Reset and start new range
+
+**Styling**:
+- Responsive layout (compact on mobile)
+- Clear visual distinction between selected, hovered, and disabled dates
+- Smooth transitions for month navigation
+
+---
+
+#### 9. Platform Multi-Select Component
+**Purpose**: Multi-select filter for choosing multiple competition platforms
+
+**Props**:
+- `availablePlatforms: string[]` (list of all platforms)
+- `selectedPlatforms: string[]` (currently selected platforms)
+- `onSelectionChange: (platforms: string[]) => void`
+
+**State**:
+- `searchQuery: string` - Filter text for platform list
+- `isExpanded: boolean` - Dropdown open/closed state
+
+**Key Functions**:
+- `togglePlatform(platform: string)`: Add/remove platform from selection
+- `selectAll()`: Select all visible platforms
+- `clearAll()`: Clear all selections
+- `filterPlatforms(query: string)`: Filter platform list by search query
+
+**UI Elements**:
+- Dropdown trigger button showing:
+  - "All Platforms" (if none selected)
+  - "X platforms selected" (if multiple selected)
+  - Platform names (if 1-3 selected)
+- Dropdown panel containing:
+  - Search input for filtering platforms
+  - "Select All" / "Clear All" buttons
+  - Scrollable checkbox list of platforms
+  - Platform names (actual platforms like "LeetCode", "CodeForces", NOT API sources)
+- Selected count badge on trigger button
+
+**Platform List**:
+- Alphabetically sorted
+- Checkboxes for multi-select
+- Search highlighting
+- Scroll for long lists (max height with overflow)
+
+**Styling**:
+- Clear visual feedback for selected items
+- Hover states for better UX
+- Responsive dropdown positioning
 
 ---
 
@@ -423,10 +672,9 @@ parseKontestsResponse(jsonResponse)
   //   url -> url
   //   start_time -> start_date (convert to ISO 8601)
   //   end_time -> end_date (convert to ISO 8601)
-  //   site -> platform
-  //   in_24_hours -> derive status
+  //   site -> platform (actual platform name)
   // Set source = 'kontests'
-  // Set category based on site name heuristics
+  // Pass to Category Inference Engine for category assignment
 
 parseCLISTResponse(jsonResponse)
   // Map CLIST.by fields to Competition schema
@@ -435,9 +683,9 @@ parseCLISTResponse(jsonResponse)
   //   href -> url
   //   start -> start_date (convert to ISO 8601)
   //   end -> end_date (convert to ISO 8601)
-  //   resource.name -> platform
+  //   resource.name -> platform (actual platform name)
   // Set source = 'clist'
-  // Set category based on resource tags
+  // Pass to Category Inference Engine for category assignment
 
 parseKaggleResponse(jsonResponse)
   // Map Kaggle API fields to Competition schema
@@ -445,22 +693,57 @@ parseKaggleResponse(jsonResponse)
   //   title -> title
   //   url -> url
   //   deadline -> end_date (convert to ISO 8601)
-  //   category -> category (direct mapping)
   //   reward -> prize
-  // Set source = 'kaggle'
   // Set platform = 'Kaggle'
+  // Set source = 'kaggle'
+  // Pass to Category Inference Engine for category assignment
 
 normalizeDate(dateString)
   // Parse various date formats
   // Return ISO 8601 string (YYYY-MM-DDTHH:mm:ssZ)
 
-inferCategory(platform, tags)
-  // Heuristic mapping:
-  //   CodeForces, LeetCode, HackerRank -> Competitive Programming
-  //   Devpost, MLH -> Hackathons
-  //   Kaggle, DrivenData -> AI/Data Science
-  //   CTFtime, HackTheBox -> CTF/Security
-  // Default: Competitive Programming
+inferCategory(platform, title, description, tags)
+  // Category Inference Engine implementation
+  // Analyze platform name, title, description, and tags
+  // Return appropriate category based on keyword matching
+  // Priority order (most specific to least specific):
+  //   1. Web3/Blockchain: "web3", "blockchain", "ethereum", "solidity", "smart contract"
+  //   2. Game Development: "game dev", "unity", "unreal", "godot", "game jam"
+  //   3. Mobile Development: "mobile", "android", "ios", "flutter", "react native"
+  //   4. Design/UI/UX: "design", "ui", "ux", "figma", "prototype"
+  //   5. Cloud/DevOps: "cloud", "devops", "aws", "azure", "kubernetes", "docker"
+  //   6. AI/Data Science: "kaggle", "machine learning", "data", "ai", "neural", "model"
+  //   7. Hackathons: "hackathon", "devpost", "mlh"
+  //   8. CTF/Security: "ctf", "security", "pwn", "crypto", "forensics"
+  //   9. Competitive Programming: "codeforces", "leetcode", "hackerrank", "atcoder", "topcoder"
+  //   10. Other: fallback for competitions not matching any category
+  // When multiple categories match, select most specific
+  // Case-insensitive keyword matching
+```
+
+**Category Inference Logic**:
+
+The Category Inference Engine uses a keyword-based classification system with priority ordering:
+
+1. **Scan Input**: Concatenate platform name, title, description, and tags into searchable text
+2. **Normalize**: Convert to lowercase for case-insensitive matching
+3. **Match Keywords**: Check for presence of category-specific keywords
+4. **Priority Selection**: If multiple categories match, select based on priority order (Web3/Blockchain highest, Other lowest)
+5. **Default Assignment**: If no keywords match, assign to "Other" category
+
+**Keyword Sets**:
+```javascript
+const CATEGORY_KEYWORDS = {
+  'Web3/Blockchain': ['web3', 'blockchain', 'ethereum', 'solidity', 'smart contract', 'defi', 'nft', 'crypto'],
+  'Game Development': ['game dev', 'unity', 'unreal', 'godot', 'game jam', 'gamedev', 'game development'],
+  'Mobile Development': ['mobile', 'android', 'ios', 'flutter', 'react native', 'swift', 'kotlin'],
+  'Design/UI/UX': ['design', 'ui', 'ux', 'figma', 'prototype', 'user experience', 'user interface'],
+  'Cloud/DevOps': ['cloud', 'devops', 'aws', 'azure', 'kubernetes', 'docker', 'infrastructure'],
+  'AI/Data Science': ['kaggle', 'machine learning', 'data', 'ai', 'neural', 'model', 'deep learning'],
+  'Hackathons': ['hackathon', 'devpost', 'mlh', 'hack'],
+  'CTF/Security': ['ctf', 'security', 'pwn', 'crypto', 'forensics', 'capture the flag'],
+  'Competitive Programming': ['codeforces', 'leetcode', 'hackerrank', 'atcoder', 'topcoder', 'codechef']
+};
 ```
 
 **Validation**:
@@ -470,7 +753,127 @@ inferCategory(platform, tags)
 
 ---
 
-#### 5. Filter Engine
+#### 5. Category Inference Engine
+**Purpose**: Automatically classify competitions into appropriate categories based on content analysis
+
+**Module**: `src/services/categoryInferenceEngine.js`
+
+**Functions**:
+
+```javascript
+inferCategory(platform, title, description, tags)
+  // Analyze input text to determine appropriate category
+  // Concatenate all text fields for comprehensive analysis
+  // Normalize to lowercase for case-insensitive matching
+  // Check for category-specific keywords in priority order
+  // Return most specific matching category or 'Other' as fallback
+
+matchKeywords(text, keywords)
+  // Check if any keyword from the set appears in text
+  // Return true if match found, false otherwise
+  // Case-insensitive matching
+
+selectMostSpecificCategory(matchedCategories)
+  // When multiple categories match, select based on priority
+  // Priority order (highest to lowest):
+  //   1. Web3/Blockchain
+  //   2. Game Development
+  //   3. Mobile Development
+  //   4. Design/UI/UX
+  //   5. Cloud/DevOps
+  //   6. AI/Data Science
+  //   7. Hackathons
+  //   8. CTF/Security
+  //   9. Competitive Programming
+  //   10. Other (fallback)
+```
+
+**Category Keyword Mappings**:
+
+```javascript
+const CATEGORY_KEYWORDS = {
+  'Web3/Blockchain': [
+    'web3', 'blockchain', 'ethereum', 'solidity', 'smart contract',
+    'defi', 'nft', 'crypto', 'web 3', 'decentralized'
+  ],
+  'Game Development': [
+    'game dev', 'unity', 'unreal', 'godot', 'game jam',
+    'gamedev', 'game development', 'game engine', 'phaser'
+  ],
+  'Mobile Development': [
+    'mobile', 'android', 'ios', 'flutter', 'react native',
+    'swift', 'kotlin', 'mobile app', 'xamarin'
+  ],
+  'Design/UI/UX': [
+    'design', 'ui', 'ux', 'figma', 'prototype',
+    'user experience', 'user interface', 'wireframe', 'mockup'
+  ],
+  'Cloud/DevOps': [
+    'cloud', 'devops', 'aws', 'azure', 'kubernetes',
+    'docker', 'infrastructure', 'terraform', 'ci/cd'
+  ],
+  'AI/Data Science': [
+    'kaggle', 'machine learning', 'data', 'ai', 'neural',
+    'model', 'deep learning', 'data science', 'ml', 'artificial intelligence'
+  ],
+  'Hackathons': [
+    'hackathon', 'devpost', 'mlh', 'hack', 'major league hacking'
+  ],
+  'CTF/Security': [
+    'ctf', 'security', 'pwn', 'crypto', 'forensics',
+    'capture the flag', 'cybersecurity', 'hacking', 'penetration'
+  ],
+  'Competitive Programming': [
+    'codeforces', 'leetcode', 'hackerrank', 'atcoder', 'topcoder',
+    'codechef', 'competitive programming', 'coding contest'
+  ]
+};
+```
+
+**Classification Algorithm**:
+
+1. **Text Preparation**:
+   - Concatenate platform, title, description, and tags
+   - Convert to lowercase
+   - Remove special characters (optional, for cleaner matching)
+
+2. **Keyword Matching**:
+   - Iterate through categories in priority order
+   - For each category, check if any keyword appears in prepared text
+   - Collect all matching categories
+
+3. **Category Selection**:
+   - If no categories match: return 'Other'
+   - If one category matches: return that category
+   - If multiple categories match: return highest priority category
+
+4. **Validation**:
+   - Ensure returned category is one of the 10 valid categories
+   - Log classification decision for debugging
+
+**Integration with API Response Parser**:
+
+The Category Inference Engine is called by the API Response Parser after field mapping:
+
+```javascript
+// In parseKontestsResponse, parseCLISTResponse, parseKaggleResponse
+const competition = {
+  title: mappedTitle,
+  description: mappedDescription,
+  platform: mappedPlatform,
+  // ... other fields
+  category: inferCategory(
+    mappedPlatform,
+    mappedTitle,
+    mappedDescription,
+    mappedTags
+  )
+};
+```
+
+---
+
+#### 6. Filter Engine
 **Purpose**: Build dynamic SQL queries for competition filtering
 
 **Module**: `src/services/filterEngine.js`
@@ -481,15 +884,16 @@ inferCategory(platform, tags)
 buildFilterQuery(filters)
   // Construct SQL WHERE clause from filter object
   // Filters:
-  //   category: exact match
+  //   category: exact match (supports all 10 categories)
   //   status: exact match
   //   location: exact match or 'online'
-  //   deadline: end_date BETWEEN now AND now + interval
+  //   dateRange: { startDate, endDate } - competitions occurring within range
+  //   singleDate: specific date - competitions occurring on that date
   //   prize: prize >= minPrize
   //   difficulty: exact match
-  //   source: exact match
+  //   platforms: array of platform names (multi-select with OR logic)
   //   search: title ILIKE %query% OR description ILIKE %query%
-  // Combine with AND logic
+  // Combine with AND logic (except platforms use OR within the group)
   // Return { query, params }
 
 async executeFilter(filters, page, limit)
@@ -498,12 +902,56 @@ async executeFilter(filters, page, limit)
   // Add sorting: ORDER BY start_date ASC
   // Execute query
   // Return { competitions, totalCount, totalPages }
+
+buildDateRangeFilter(startDate, endDate)
+  // Return SQL clause:
+  //   (start_date BETWEEN startDate AND endDate) OR
+  //   (end_date BETWEEN startDate AND endDate) OR
+  //   (start_date <= startDate AND end_date >= endDate)
+  // Captures competitions that overlap with the date range
+
+buildSingleDateFilter(date)
+  // Return SQL clause:
+  //   start_date <= date AND end_date >= date
+  // Captures competitions occurring on the specific date
+
+buildPlatformFilter(platforms)
+  // Return SQL clause:
+  //   platform IN (platform1, platform2, ...)
+  // Supports multi-select with OR logic
+  // Uses actual platform names (LeetCode, CodeForces, Kaggle, etc.)
+
+getAvailablePlatforms()
+  // Query distinct platform values from competitions table
+  // Return sorted list of actual platform names
+  // Used to populate multi-select filter options
 ```
+
+**Date Filtering Logic**:
+
+The Filter Engine supports two date filtering modes:
+
+1. **Single Date**: Returns competitions that are active on the specified date
+   - SQL: `start_date <= date AND end_date >= date`
+   - Example: User selects "2024-03-15" → returns competitions running on that day
+
+2. **Date Range**: Returns competitions that overlap with the specified range
+   - SQL: `(start_date BETWEEN startDate AND endDate) OR (end_date BETWEEN startDate AND endDate) OR (start_date <= startDate AND end_date >= endDate)`
+   - Example: User selects "2024-03-01" to "2024-03-31" → returns all competitions with any overlap in March
+
+**Platform Filtering Logic**:
+
+The Filter Engine supports multi-select platform filtering:
+
+- **Single Platform**: `platform = 'LeetCode'`
+- **Multiple Platforms**: `platform IN ('LeetCode', 'CodeForces', 'Kaggle')`
+- **No Platform Filter**: No WHERE clause added (returns all platforms)
 
 **Query Optimization**:
 - Uses parameterized queries to prevent SQL injection
-- Leverages indexes on category, status, start_date
+- Leverages indexes on category, status, start_date, end_date
 - Full-text search on title and description (case-insensitive)
+- Platform filter uses indexed column for efficient lookups
 
 ---
 
@@ -567,14 +1015,16 @@ Errors:
 **GET /api/competitions**
 ```
 Query Parameters:
-- category: string (optional)
-- status: string (optional)
-- location: string (optional)
-- deadline: string (optional, e.g., "7days", "30days")
+- category: string (optional) - One of 10 categories
+- status: string (optional) - upcoming, ongoing, ended
+- location: string (optional) - online, on-site, or specific location
+- startDate: string (optional) - ISO 8601 date for range start
+- endDate: string (optional) - ISO 8601 date for range end
+- singleDate: string (optional) - ISO 8601 date for single day filter
 - prize: number (optional, minimum prize)
 - difficulty: string (optional)
-- source: string (optional)
-- search: string (optional)
+- platforms: string (optional) - comma-separated list of platform names (e.g., "LeetCode,CodeForces,Kaggle")
+- search: string (optional) - text search in title/description
 - page: number (default: 1)
 - limit: number (default: 20)
 
@@ -588,6 +1038,37 @@ Response (200):
     "limit": number
   }
 }
+
+Notes:
+- platforms parameter accepts actual platform names (LeetCode, CodeForces, Kaggle, HackerRank, etc.)
+- Multiple platforms are OR'd together (returns competitions from any selected platform)
+- Date filtering supports either singleDate OR startDate+endDate (not both)
+- singleDate returns competitions active on that specific date
+- startDate+endDate returns competitions overlapping with the date range
+```
+
+**GET /api/competitions/platforms**
+```json
+Response (200):
+{
+  "platforms": [
+    "LeetCode",
+    "CodeForces",
+    "Kaggle",
+    "HackerRank",
+    "Devpost",
+    "CTFtime",
+    "AtCoder",
+    "TopCoder",
+    ...
+  ]
+}
+
+Notes:
+- Returns distinct platform names from competitions table
+- Sorted alphabetically
+- Used to populate multi-select platform filter
+- Returns actual platform names, not API source identifiers
 ```
 
 **GET /api/competitions/:id**
@@ -787,7 +1268,13 @@ CREATE TABLE competitions (
     'Competitive Programming',
     'Hackathons',
     'AI/Data Science',
-    'CTF/Security'
+    'CTF/Security',
+    'Web3/Blockchain',
+    'Game Development',
+    'Mobile Development',
+    'Design/UI/UX',
+    'Cloud/DevOps',
+    'Other'
   )),
   CONSTRAINT valid_status CHECK (status IN ('upcoming', 'ongoing', 'ended')),
   CONSTRAINT valid_dates CHECK (end_date > start_date),
@@ -799,14 +1286,15 @@ CREATE INDEX idx_competitions_status ON competitions(status);
 CREATE INDEX idx_competitions_start_date ON competitions(start_date);
 CREATE INDEX idx_competitions_source ON competitions(source);
 CREATE INDEX idx_competitions_end_date ON competitions(end_date);
+CREATE INDEX idx_competitions_platform ON competitions(platform);
 ```
 
 **Field Descriptions**:
 - `id`: Unique identifier (UUID v4)
 - `title`: Competition name
 - `description`: Full description (optional)
-- `category`: One of four predefined categories
-- `platform`: Source platform (e.g., "CodeForces", "Kaggle")
+- `category`: One of ten predefined categories (Competitive Programming, Hackathons, AI/Data Science, CTF/Security, Web3/Blockchain, Game Development, Mobile Development, Design/UI/UX, Cloud/DevOps, Other)
+- `platform`: Actual competition hosting platform (e.g., "LeetCode", "CodeForces", "Kaggle", "HackerRank")
 - `url`: Link to original competition page
 - `start_date`: Competition start time (ISO 8601)
 - `end_date`: Competition end time (ISO 8601)
@@ -814,7 +1302,7 @@ CREATE INDEX idx_competitions_end_date ON competitions(end_date);
 - `location`: Physical location or "online" (optional)
 - `prize`: Prize description (optional)
 - `difficulty`: Difficulty level (optional)
-- `source`: API source (kontests/clist/kaggle)
+- `source`: API source identifier for internal tracking (kontests/clist/kaggle)
 - `created_at`: Record creation timestamp
 - `updated_at`: Last modification timestamp
 
@@ -891,8 +1379,10 @@ interface Competition {
   id: string;
   title: string;
   description?: string;
-  category: 'Competitive Programming' | 'Hackathons' | 'AI/Data Science' | 'CTF/Security';
-  platform: string;
+  category: 'Competitive Programming' | 'Hackathons' | 'AI/Data Science' | 'CTF/Security' | 
+            'Web3/Blockchain' | 'Game Development' | 'Mobile Development' | 'Design/UI/UX' | 
+            'Cloud/DevOps' | 'Other';
+  platform: string; // Actual platform name (LeetCode, CodeForces, Kaggle, HackerRank, etc.)
   url: string;
   start_date: string;
   end_date: string;
@@ -900,7 +1390,7 @@ interface Competition {
   location?: string;
   prize?: string;
   difficulty?: string;
-  source: 'kontests' | 'clist' | 'kaggle';
+  source: 'kontests' | 'clist' | 'kaggle'; // API source for internal tracking
   created_at: string;
   updated_at: string;
 }
@@ -926,10 +1416,12 @@ interface FilterState {
   category?: string;
   status?: string;
   location?: string;
-  deadline?: string;
+  startDate?: string; // ISO 8601 date string
+  endDate?: string; // ISO 8601 date string
+  singleDate?: string; // ISO 8601 date string
   prize?: number;
   difficulty?: string;
-  source?: string;
+  platforms?: string[]; // Array of platform names for multi-select
   search?: string;
 }
 
@@ -938,6 +1430,11 @@ interface PaginationState {
   totalPages: number;
   totalCount: number;
   limit: number;
+}
+
+interface DateRange {
+  startDate: Date | null;
+  endDate: Date | null;
 }
 ```
 
@@ -1210,6 +1707,21 @@ The DevArena platform requires a multi-layered testing strategy combining unit t
    - Conditional rendering based on props/state
    - Form validation displays error messages
    - Loading states display correctly
+   - Date picker handles single date and range selection
+   - Platform multi-select handles selection/deselection
+   - Competition cards display platform names (not API sources)
+   - Competition cards show location as "Online" or "On-site"
+
+5. **Category Inference Engine**
+   - Keyword matching is case-insensitive
+   - Multiple keyword matches select highest priority category
+   - No keyword matches default to 'Other' category
+   - Platform-specific keywords correctly classify competitions
+   - Web3/Blockchain keywords take priority over general keywords
+   - Game Development keywords correctly identified
+   - Mobile Development keywords correctly identified
+   - Design/UI/UX keywords correctly identified
+   - Cloud/DevOps keywords correctly identified
 
 ### Property-Based Testing
 
@@ -1371,7 +1883,13 @@ const validCompetitionGenerator = () => fc.record({
     'Competitive Programming',
     'Hackathons',
     'AI/Data Science',
-    'CTF/Security'
+    'CTF/Security',
+    'Web3/Blockchain',
+    'Game Development',
+    'Mobile Development',
+    'Design/UI/UX',
+    'Cloud/DevOps',
+    'Other'
   ),
   platform: fc.string({ minLength: 1 }),
   url: fc.webUrl(),
@@ -1435,6 +1953,11 @@ const competitionWithMissingFieldsGenerator = () => {
    - Multiple filters → verify AND logic
    - Search query → verify case-insensitive match
    - Pagination → verify correct page returned
+   - Date range filter → verify competitions within range
+   - Single date filter → verify competitions on specific date
+   - Platform multi-select → verify OR logic for platforms
+   - Category filter → verify all 10 categories work correctly
+   - Platform filter uses actual platform names (not API sources)
 
 ### End-to-End Testing
 
@@ -1455,12 +1978,17 @@ const competitionWithMissingFieldsGenerator = () => {
 
 2. **Competition Discovery**
    - Navigate to Explore page
-   - Apply category filter
+   - Apply category filter (test multiple categories including new ones)
    - Apply status filter
+   - Select date range using date picker calendar
+   - Select multiple platforms using multi-select filter
    - Enter search query
    - Verify filtered results
+   - Verify competition cards show platform names (not API sources)
+   - Verify competition cards show descriptions
+   - Verify location displays as "Online" or "On-site"
    - Click competition card
-   - Verify detail page loads
+   - Verify detail page loads with full information
 
 3. **Bookmark Management**
    - Login as user
@@ -1520,7 +2048,14 @@ const competitionWithMissingFieldsGenerator = () => {
 **Pre-Release Verification**:
 - [ ] All three external APIs successfully sync
 - [ ] Admin can manually trigger sync
+- [ ] All 10 categories correctly assigned by Category Inference Engine
 - [ ] Filters work in all combinations
+- [ ] Date picker allows single date and date range selection
+- [ ] Platform multi-select allows selecting multiple platforms
+- [ ] Platform filter displays actual platform names (LeetCode, CodeForces, etc.)
+- [ ] Competition cards show platform names (not API sources)
+- [ ] Competition cards display descriptions
+- [ ] Location displays as "Online" or "On-site: [location]"
 - [ ] Bookmarks persist across sessions
 - [ ] JWT expiration handled gracefully
 - [ ] Mobile responsive design verified

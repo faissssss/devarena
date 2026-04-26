@@ -1,9 +1,26 @@
 import { Link } from 'react-router-dom';
+import { formatPlatformName } from '../utils/platformFormatter';
+import { formatPrize } from '../utils/prizeFormatter';
+import { formatTitle } from '../utils/textFormatter';
 
 const statusColors = {
   upcoming:  { bg: 'rgba(31,138,101,0.10)', color: '#1f8a65' },
   ongoing:   { bg: 'rgba(245,78,0,0.10)',   color: '#f54e00' },
   ended:     { bg: 'rgba(38,37,30,0.08)',   color: 'var(--text-secondary)' },
+};
+
+// Category color coding for all 10 categories
+const categoryColors = {
+  'Competitive Programming': { bg: 'rgba(245,78,0,0.10)', color: '#f54e00' },
+  'AI/Data Science': { bg: 'rgba(147,51,234,0.10)', color: '#9333ea' },
+  'Hackathons': { bg: 'rgba(59,130,246,0.10)', color: '#3b82f6' },
+  'CTF/Security': { bg: 'rgba(239,68,68,0.10)', color: '#ef4444' },
+  'Web3/Blockchain': { bg: 'rgba(251,191,36,0.10)', color: '#fbbf24' },
+  'Game Development': { bg: 'rgba(168,85,247,0.10)', color: '#a855f7' },
+  'Mobile Development': { bg: 'rgba(34,197,94,0.10)', color: '#22c55e' },
+  'Design/UI/UX': { bg: 'rgba(236,72,153,0.10)', color: '#ec4899' },
+  'Cloud/DevOps': { bg: 'rgba(14,165,233,0.10)', color: '#0ea5e9' },
+  'Other': { bg: 'rgba(107,114,128,0.10)', color: '#6b7280' },
 };
 
 function DeadlinePill({ endDate, status }) {
@@ -18,11 +35,11 @@ function DeadlinePill({ endDate, status }) {
           gap: 4,
           background: 'rgba(207,45,86,0.10)',
           color: 'var(--color-error)',
-          padding: '2px 8px',
-          borderRadius: 9999,
+          padding: '4px 10px',
+          borderRadius: 6,
           fontSize: '0.6875rem',
           fontWeight: 500,
-          letterSpacing: '0.18em',
+          letterSpacing: '0.12em',
           textTransform: 'uppercase',
           fontFamily: 'var(--font-ui)',
         }}
@@ -48,11 +65,11 @@ function DeadlinePill({ endDate, status }) {
         alignItems: 'center',
         background: s.bg,
         color: s.color,
-        padding: '2px 8px',
-        borderRadius: 9999,
+        padding: '4px 10px',
+        borderRadius: 6,
         fontSize: '0.6875rem',
         fontWeight: 500,
-        letterSpacing: '0.18em',
+        letterSpacing: '0.12em',
         textTransform: 'uppercase',
         fontFamily: 'var(--font-ui)',
       }}
@@ -68,16 +85,31 @@ export default function CompetitionCard({
   onToggleBookmark,
   compact = false,
 }) {
+  // Format location display
+  const locationDisplay = competition.location && competition.location.toLowerCase() !== 'online'
+    ? `📍 On-site: ${competition.location}`
+    : '🌐 Online';
+
+  // Get category color
+  const categoryStyle = categoryColors[competition.category] || categoryColors['Other'];
+  
+  // Format platform name
+  const platformDisplay = formatPlatformName(competition.platform);
+
   return (
     <article
       className="card"
       style={{
-        padding: '20px 22px',
+        padding: '18px 20px',
         display: 'flex',
         flexDirection: 'column',
         gap: 0,
         background: 'var(--surface-100)',
         transition: 'box-shadow 200ms ease, transform 200ms ease',
+        cursor: 'pointer',
+        minHeight: 0,
+        height: '100%',
+        boxSizing: 'border-box',
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.boxShadow = 'rgba(0,0,0,0.16) 0px 24px 60px, rgba(0,0,0,0.10) 0px 8px 24px, rgba(38,37,30,0.12) 0px 0px 0px 1px';
@@ -89,13 +121,13 @@ export default function CompetitionCard({
       }}
     >
       {/* Header row */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p
             className="text-eyebrow"
-            style={{ marginBottom: 6, letterSpacing: '0.28em', fontSize: '0.625rem' }}
+            style={{ marginBottom: 4, letterSpacing: '0.24em', fontSize: '0.625rem' }}
           >
-            {competition.platform} · {competition.category}
+            {platformDisplay}
           </p>
           <h3
             className="text-title"
@@ -106,10 +138,31 @@ export default function CompetitionCard({
               display: '-webkit-box',
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
+              fontSize: '1.125rem',
+              lineHeight: 1.35,
             }}
           >
-            {competition.title}
+            {formatTitle(competition.title)}
           </h3>
+          {/* Category badge */}
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              background: categoryStyle.bg,
+              color: categoryStyle.color,
+              padding: '3px 10px',
+              borderRadius: 9999,
+              fontSize: '0.625rem',
+              fontWeight: 500,
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+              fontFamily: 'var(--font-ui)',
+              marginTop: 6,
+            }}
+          >
+            {competition.category}
+          </span>
         </div>
 
         {onToggleBookmark && (
@@ -118,22 +171,22 @@ export default function CompetitionCard({
             onClick={() => onToggleBookmark(competition, bookmarkId)}
             aria-label={bookmarkId ? 'Remove bookmark' : 'Save bookmark'}
             aria-pressed={Boolean(bookmarkId)}
+            className={`btn ${bookmarkId ? 'bookmark-saved' : 'bookmark-unsaved'}`}
             style={{
               flexShrink: 0,
-              background: bookmarkId ? 'var(--color-dark)' : 'var(--surface-300)',
-              color: bookmarkId ? '#fef9f0' : 'var(--text-secondary)',
               border: '1px solid var(--border-primary)',
-              borderRadius: 9999,
-              padding: '4px 10px',
+              borderRadius: 6,
+              padding: '6px 12px',
               fontSize: '0.6875rem',
               fontWeight: 500,
-              letterSpacing: '0.18em',
+              letterSpacing: '0.12em',
               textTransform: 'uppercase',
               fontFamily: 'var(--font-ui)',
               cursor: 'pointer',
-              transition: 'background 150ms ease, color 150ms ease',
-              minWidth: 52,
+              transition: 'all 150ms ease',
+              minWidth: 60,
               textAlign: 'center',
+              height: 'fit-content',
             }}
           >
             {bookmarkId ? 'Saved' : 'Save'}
@@ -146,13 +199,16 @@ export default function CompetitionCard({
         <p
           className="text-body-serif"
           style={{
-            margin: '0 0 16px',
+            margin: '0 0 12px',
             color: 'var(--text-secondary)',
             overflow: 'hidden',
             display: '-webkit-box',
-            WebkitLineClamp: 3,
+            WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
-            fontSize: '0.9375rem',
+            fontSize: '0.875rem',
+            lineHeight: 1.5,
+            wordBreak: 'break-word',
+            overflowWrap: 'break-word',
           }}
         >
           {competition.description || 'A curated developer competition ready for exploration.'}
@@ -164,20 +220,30 @@ export default function CompetitionCard({
         style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
-          gap: '10px 16px',
-          marginBottom: 16,
+          gap: '8px 12px',
+          marginBottom: 12,
           borderTop: '1px solid var(--border-primary)',
-          paddingTop: 14,
+          paddingTop: 12,
         }}
       >
         {[
-          ['Starts', new Date(competition.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })],
+          ['Starts', (() => {
+            const start = new Date(competition.start_date);
+            const end = new Date(competition.end_date);
+            // If start is within 2 hours of end, it's likely a placeholder (Kaggle competitions)
+            const diffHours = (end - start) / (1000 * 60 * 60);
+            if (diffHours < 2) {
+              return '-';
+            }
+            return start.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+          })()],
           ['Ends',   new Date(competition.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })],
-          ['Source', competition.source],
-          ['Location', competition.location || 'Online'],
+          ['Location', locationDisplay],
+          ...(competition.prize ? [['Prize', formatPrize(competition.prize)]] : []),
+          ...(competition.difficulty ? [['Difficulty', competition.difficulty]] : []),
         ].map(([label, value]) => (
           <div key={label}>
-            <p className="text-eyebrow" style={{ marginBottom: 2, fontSize: '0.6rem', letterSpacing: '0.22em' }}>
+            <p className="text-eyebrow" style={{ marginBottom: 3, fontSize: '0.5625rem', letterSpacing: '0.20em' }}>
               {label}
             </p>
             <p
@@ -187,6 +253,7 @@ export default function CompetitionCard({
                 fontSize: '0.8125rem',
                 fontWeight: 500,
                 color: 'var(--color-dark)',
+                lineHeight: 1.3,
               }}
             >
               {value}
@@ -196,7 +263,7 @@ export default function CompetitionCard({
       </div>
 
       {/* Footer */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 'auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 'auto', paddingTop: 4 }}>
         <DeadlinePill endDate={competition.end_date} status={competition.status} />
         <Link
           to={`/competitions/${competition.id}`}
@@ -208,6 +275,7 @@ export default function CompetitionCard({
             textDecoration: 'none',
             transition: 'color 150ms ease',
             letterSpacing: '0.01em',
+            whiteSpace: 'nowrap',
           }}
           onMouseEnter={(e) => (e.currentTarget.style.color = '#d94400')}
           onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-accent)')}

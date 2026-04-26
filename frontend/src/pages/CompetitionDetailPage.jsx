@@ -3,11 +3,27 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext';
 import { bookmarkApi, competitionApi, unwrapError } from '../services/api';
+import { formatPlatformName } from '../utils/platformFormatter';
+import { formatPrize } from '../utils/prizeFormatter';
 
 const statusColors = {
   upcoming: { bg: 'rgba(31,138,101,0.10)', color: '#1f8a65' },
   ongoing:  { bg: 'rgba(245,78,0,0.10)',   color: '#f54e00' },
   ended:    { bg: 'rgba(38,37,30,0.08)',   color: 'var(--text-secondary)' },
+};
+
+// Category color coding for all 10 categories
+const categoryColors = {
+  'Competitive Programming': { bg: 'rgba(245,78,0,0.10)', color: '#f54e00' },
+  'AI/Data Science': { bg: 'rgba(147,51,234,0.10)', color: '#9333ea' },
+  'Hackathons': { bg: 'rgba(59,130,246,0.10)', color: '#3b82f6' },
+  'CTF/Security': { bg: 'rgba(239,68,68,0.10)', color: '#ef4444' },
+  'Web3/Blockchain': { bg: 'rgba(251,191,36,0.10)', color: '#fbbf24' },
+  'Game Development': { bg: 'rgba(168,85,247,0.10)', color: '#a855f7' },
+  'Mobile Development': { bg: 'rgba(34,197,94,0.10)', color: '#22c55e' },
+  'Design/UI/UX': { bg: 'rgba(236,72,153,0.10)', color: '#ec4899' },
+  'Cloud/DevOps': { bg: 'rgba(14,165,233,0.10)', color: '#0ea5e9' },
+  'Other': { bg: 'rgba(107,114,128,0.10)', color: '#6b7280' },
 };
 
 function MetaCell({ label, value, accent }) {
@@ -130,59 +146,72 @@ export default function CompetitionDetailPage() {
   }
 
   const sc = statusColors[competition.status] || statusColors.ended;
+  const categoryStyle = categoryColors[competition.category] || categoryColors['Other'];
+
+  // Format location display
+  const locationDisplay = competition.location && competition.location.toLowerCase() !== 'online'
+    ? `📍 On-site: ${competition.location}`
+    : '🌐 Online';
+    
+  // Format platform name
+  const platformDisplay = formatPlatformName(competition.platform);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {/* Breadcrumb */}
-      <nav aria-label="Breadcrumb">
-        <ol style={{ display: 'flex', gap: 6, alignItems: 'center', listStyle: 'none', padding: 0, margin: 0 }}>
-          <li>
-            <Link
-              to="/explore"
-              style={{
-                fontFamily: 'var(--font-ui)',
-                fontSize: '0.8125rem',
-                color: 'var(--text-secondary)',
-                textDecoration: 'none',
-                transition: 'color 150ms ease',
-              }}
-            >
-              Explore
-            </Link>
-          </li>
-          <li aria-hidden="true" style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>›</li>
-          <li
-            style={{
-              fontFamily: 'var(--font-ui)',
-              fontSize: '0.8125rem',
-              color: 'var(--color-dark)',
-              fontWeight: 500,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              maxWidth: 280,
-            }}
-            aria-current="page"
-          >
-            {competition.title}
-          </li>
-        </ol>
-      </nav>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+      {/* Back button */}
+      <Link
+        to="/explore"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          fontFamily: 'var(--font-ui)',
+          fontSize: '0.8125rem',
+          fontWeight: 500,
+          color: 'var(--text-secondary)',
+          textDecoration: 'none',
+          transition: 'color 150ms ease',
+          width: 'fit-content',
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-dark)')}
+        onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        Back to Explore
+      </Link>
 
       {/* Main card */}
       <article
         style={{
           background: 'var(--surface-100)',
           border: '1px solid var(--border-primary)',
-          borderRadius: 16,
-          padding: 'clamp(24px, 4vw, 44px)',
-          boxShadow: 'rgba(0,0,0,0.06) 0px 16px 48px',
+          borderRadius: 12,
+          padding: 'clamp(32px, 4vw, 48px)',
+          boxShadow: 'rgba(0,0,0,0.04) 0px 12px 32px',
         }}
       >
         {/* Platform + category */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-          <span className="pill">{competition.platform}</span>
-          <span className="pill">{competition.category}</span>
+          <span className="pill">{platformDisplay}</span>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              background: categoryStyle.bg,
+              color: categoryStyle.color,
+              padding: '3px 10px',
+              borderRadius: 9999,
+              fontSize: '0.6875rem',
+              fontWeight: 500,
+              letterSpacing: '0.24em',
+              textTransform: 'uppercase',
+              fontFamily: 'var(--font-ui)',
+            }}
+          >
+            {competition.category}
+          </span>
           <span
             style={{
               display: 'inline-flex',
@@ -232,10 +261,22 @@ export default function CompetitionDetailPage() {
             marginBottom: 28,
           }}
         >
-          <MetaCell label="Start date" value={new Date(competition.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} />
+          <MetaCell 
+            label="Start date" 
+            value={(() => {
+              const start = new Date(competition.start_date);
+              const end = new Date(competition.end_date);
+              // If start is within 2 hours of end, it's likely a placeholder (Kaggle competitions)
+              const diffHours = (end - start) / (1000 * 60 * 60);
+              if (diffHours < 2) {
+                return '-';
+              }
+              return start.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+            })()} 
+          />
           <MetaCell label="End date"   value={new Date(competition.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} />
-          <MetaCell label="Location"   value={competition.location || 'Online'} />
-          {competition.prize && <MetaCell label="Prize" value={competition.prize} accent="var(--color-gold)" />}
+          <MetaCell label="Location"   value={locationDisplay} />
+          {competition.prize && <MetaCell label="Prize" value={formatPrize(competition.prize)} accent="var(--color-gold)" />}
           {competition.difficulty && <MetaCell label="Difficulty" value={competition.difficulty} />}
           <MetaCell label="Source" value={competition.source} />
         </div>

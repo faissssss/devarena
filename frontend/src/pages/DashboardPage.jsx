@@ -44,7 +44,7 @@ export default function DashboardPage() {
   const ongoingCount  = bookmarks.filter((b) => b.competition?.status === 'ongoing').length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
       <SectionHeading
         eyebrow="Dashboard"
         title="Your active watchlist."
@@ -52,7 +52,7 @@ export default function DashboardPage() {
       />
 
       {/* Stats strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
         {[
           { label: 'Total saved',  value: bookmarks.length },
           { label: 'Upcoming',     value: upcomingCount },
@@ -64,14 +64,14 @@ export default function DashboardPage() {
               background: 'var(--surface-100)',
               border: '1px solid var(--border-primary)',
               borderRadius: 10,
-              padding: '16px 18px',
+              padding: '20px 22px',
             }}
           >
-            <p className="text-eyebrow" style={{ marginBottom: 6 }}>{label}</p>
+            <p className="text-eyebrow" style={{ marginBottom: 8 }}>{label}</p>
             <p
               style={{
                 fontFamily: 'var(--font-display)',
-                fontSize: '2rem',
+                fontSize: '2.25rem',
                 fontWeight: 400,
                 letterSpacing: '-0.5px',
                 color: 'var(--color-dark)',
@@ -93,17 +93,16 @@ export default function DashboardPage() {
             type="button"
             onClick={() => setStatusFilter(value)}
             aria-pressed={statusFilter === value}
+            className={`btn ${statusFilter === value ? 'filter-pill-active' : 'filter-pill-inactive'}`}
             style={{
               fontFamily: 'var(--font-ui)',
               fontSize: '0.8125rem',
               fontWeight: 500,
-              padding: '6px 14px',
-              borderRadius: 9999,
+              padding: '8px 16px',
+              borderRadius: 6,
               border: '1px solid var(--border-primary)',
               cursor: 'pointer',
               transition: 'background 150ms ease, color 150ms ease',
-              background: statusFilter === value ? 'var(--color-dark)' : 'var(--surface-300)',
-              color: statusFilter === value ? '#fef9f0' : 'var(--text-secondary)',
             }}
           >
             {label}
@@ -121,7 +120,7 @@ export default function DashboardPage() {
             color: 'var(--color-error)',
             background: 'rgba(207,45,86,0.08)',
             border: '1px solid rgba(207,45,86,0.20)',
-            borderRadius: 8,
+            borderRadius: 6,
             padding: '10px 14px',
           }}
         >
@@ -131,7 +130,7 @@ export default function DashboardPage() {
 
       {/* Content */}
       {loading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: 16 }}>
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
@@ -139,15 +138,15 @@ export default function DashboardPage() {
                 background: 'var(--surface-100)',
                 border: '1px solid var(--border-primary)',
                 borderRadius: 10,
-                padding: '20px 22px',
+                padding: '18px 20px',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 12,
+                gap: 10,
               }}
             >
-              <div className="skeleton" style={{ height: 12, width: '40%' }} />
-              <div className="skeleton" style={{ height: 20, width: '75%' }} />
-              <div className="skeleton" style={{ height: 60 }} />
+              <div className="skeleton" style={{ height: 10, width: '40%' }} />
+              <div className="skeleton" style={{ height: 18, width: '75%' }} />
+              <div className="skeleton" style={{ height: 50 }} />
             </div>
           ))}
         </div>
@@ -156,15 +155,15 @@ export default function DashboardPage() {
           style={{
             background: 'var(--surface-100)',
             border: '1px dashed var(--border-medium)',
-            borderRadius: 12,
-            padding: '56px 32px',
+            borderRadius: 10,
+            padding: '64px 40px',
             textAlign: 'center',
           }}
         >
           <p
             style={{
               fontFamily: 'var(--font-display)',
-              fontSize: '1.25rem',
+              fontSize: '1.125rem',
               fontWeight: 400,
               letterSpacing: '-0.08px',
               color: 'var(--color-dark)',
@@ -173,19 +172,19 @@ export default function DashboardPage() {
           >
             No bookmarks yet
           </p>
-          <p className="text-body-serif" style={{ color: 'var(--text-secondary)', margin: '0 0 20px' }}>
+          <p className="text-body-serif" style={{ color: 'var(--text-secondary)', margin: '0 0 24px', fontSize: '0.9375rem' }}>
             Head to Explore to find competitions worth tracking.
           </p>
           <a
             href="/explore"
-            className="btn btn-primary"
-            style={{ display: 'inline-flex', padding: '9px 18px' }}
+            className="btn btn-dark"
+            style={{ display: 'inline-flex', padding: '10px 20px' }}
           >
             Explore competitions
           </a>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: 16 }}>
           {visible.map((bookmark) => (
             <CompetitionCard
               key={bookmark.id}

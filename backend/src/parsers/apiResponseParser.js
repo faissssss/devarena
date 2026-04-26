@@ -1,3 +1,5 @@
+import { inferCategory } from '../services/categoryInferenceEngine.js';
+
 function buildError(code, message, details = undefined) {
   return { error: { code, message, details } };
 }
@@ -45,48 +47,46 @@ export function normalizeDate(value) {
   }
 }
 
-export function inferCategory(platform = '', tags = []) {
-  const tagText = Array.isArray(tags) ? tags.join(' ').toLowerCase() : String(tags).toLowerCase();
-  const platformText = String(platform).toLowerCase();
-  const haystack = `${platformText} ${tagText}`;
-
-  if (
-    haystack.includes('kaggle') ||
-    haystack.includes('machine learning') ||
-    haystack.includes('data') ||
-    haystack.includes('ai')
-  ) {
-    return 'AI/Data Science';
-  }
-
-  if (haystack.includes('hackathon') || haystack.includes('devpost') || haystack.includes('mlh')) {
-    return 'Hackathons';
-  }
-
-  if (
-    haystack.includes('ctf') ||
-    haystack.includes('security') ||
-    haystack.includes('pwn') ||
-    haystack.includes('crypto')
-  ) {
-    return 'CTF/Security';
-  }
-
-  return 'Competitive Programming';
-}
-
 function normalizeCompetition(entry, overrides = {}) {
   const startDate = normalizeDate(overrides.start_date ?? entry.start_date);
   const endDate = normalizeDate(overrides.end_date ?? entry.end_date);
   const now = Date.now();
-  const start = startDate ? new Date(startDate).getTime() : now;
-  const end = endDate ? new Date(endDate).getTime() : null;
+  
+  // If no start date provided but end date exists, set start to 1 hour before end
+  // This handles cases like Kaggle where we only know the deadline
+  let finalStartDate;
+  let finalEndDate;
+  
+  if (!startDate && endDate) {
+    // Only have end date (deadline) - set start to 1 hour before
+    const endTime = new Date(endDate).getTime();
+    finalStartDate = new Date(endTime - 60 * 60 * 1000).toISOString();
+    finalEndDate = endDate;
+  } else if (startDate && endDate) {
+    // Have both dates - use them
+    finalStartDate = startDate;
+    finalEndDate = endDate;
+    
+    // Ensure end is after start
+    const start = new Date(startDate).getTime();
+    const end = new Date(endDate).getTime();
+    if (end <= start) {
+      finalEndDate = new Date(start + 60 * 60 * 1000).toISOString();
+    }
+  } else if (startDate && !endDate) {
+    // Only have start date - set end to 1 hour after
+    const startTime = new Date(startDate).getTime();
+    finalStartDate = startDate;
+    finalEndDate = new Date(startTime + 60 * 60 * 1000).toISOString();
+  } else {
+    // No dates at all - use current time
+    finalStartDate = new Date(now).toISOString();
+    finalEndDate = new Date(now + 60 * 60 * 1000).toISOString();
+  }
+  
   const title = overrides.title ?? entry.title;
   const platform = overrides.platform ?? entry.platform;
   const url = overrides.url ?? entry.url;
-  
-  // Ensure end_date is always after start_date (add 1 hour minimum duration)
-  const finalEndTime = end && end > start ? end : start + 60 * 60 * 1000;
 
   return {
     title: title && String(title).trim() ? title : 'Untitled Competition',
@@ -94,8 +94,8 @@ function normalizeCompetition(entry, overrides = {}) {
     category: overrides.category ?? entry.category ?? 'Competitive Programming',
     platform: platform && String(platform).trim() ? platform : 'Unknown',
     url: url && String(url).trim() ? url : '#',
-    start_date: startDate ?? new Date(now).toISOString(),
-    end_date: new Date(finalEndTime).toISOString(),
+    start_date: finalStartDate,
+    end_date: finalEndDate,
     location: overrides.location ?? entry.location ?? 'Online',
     prize: overrides.prize ?? entry.prize ?? null,
     difficulty: overrides.difficulty ?? entry.difficulty ?? null,
@@ -118,7 +118,7 @@ export function parseKontestsResponse(payload) {
         start_date: item.start_time,
         end_date: item.end_time,
         platform: item.site,
-        category: inferCategory(item.site),
+        category: inferCategory(item.site, item.name, '', []),
         source: 'kontests',
       })
     ),
@@ -144,10 +144,15 @@ export function parseCLISTResponse(payload) {
         url: item.href,
         start_date: item.start,
         end_date: item.end,
-        platform: item.resource?.name ?? 'CLIST',
-        category: inferCategory(item.resource?.name, item.categories ?? item.tags ?? []),
-        description: item.description ?? null,
-        location: item.host ?? item.location ?? 'Online',
+        platform: item.resource || item.host || 'CLIST',
+        category: inferCategory(
+          item.resource || item.host || 'CLIST',
+          item.event ?? '',
+          item.description ?? '',
+          item.categories ?? item.tags ?? []
+        ),
+        description: item.description || null,
+        location: item.location || 'Online', // Only use actual location field, default to Online
         source: 'clist',
       })
     ),
@@ -166,25 +171,45 @@ export function parseKaggleResponse(payload) {
       ? parsed.data.competitions
       : [];
 
+  const now = new Date();
+  const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+
   return {
-    competitions: items.map((item) => {
-      // Handle both API response and CLI parsed format
-      const title = item.title || (item.ref ? item.ref.split('/').pop().replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Untitled');
-      const url = item.url || item.ref || '#';
-      const deadline = item.deadline || item.deadlineDate || item.endDate;
-      
-      return normalizeCompetition(item, {
-        title,
-        url,
-        start_date: item.enabledDate || item.startDate || new Date().toISOString(),
-        end_date: deadline,
-        platform: 'Kaggle',
-        category: item.category === 'Featured' || item.category === 'Research' ? 'AI/Data Science' : inferCategory('Kaggle', item.tags ?? []),
-        prize: item.reward || item.prize || null,
-        description: item.description ?? null,
-        location: 'Online',
-        source: 'kaggle',
-      });
-    }),
+    competitions: items
+      .filter((item) => {
+        // Filter: Keep competitions from the past year onwards
+        const deadline = item.deadline || item.deadlineDate || item.endDate;
+        if (!deadline) return true; // Keep if no deadline
+        
+        const deadlineDate = new Date(deadline);
+        return deadlineDate >= oneYearAgo; // Keep if deadline is within past year or future
+      })
+      .map((item) => {
+        // Handle both API response and CLI parsed format
+        const title = item.title || (item.ref ? item.ref.split('/').pop().replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Untitled');
+        const url = item.url || item.ref || '#';
+        const deadline = item.deadline || item.deadlineDate || item.endDate;
+        const description = item.description ?? '';
+        const tags = item.tags ?? [];
+        
+        // IMPORTANT: Kaggle CLI only provides deadline, NOT start date
+        // We use the deadline as end_date and leave start_date as null
+        // The frontend should handle displaying "Deadline: [date]" instead of date range
+        
+        return normalizeCompetition(item, {
+          title,
+          url,
+          start_date: item.enabledDate || item.startDate || null, // null if not provided
+          end_date: deadline,
+          platform: 'Kaggle',
+          category: item.category === 'Featured' || item.category === 'Research' 
+            ? 'AI/Data Science' 
+            : inferCategory('Kaggle', title, description, tags),
+          prize: item.reward || item.prize || null,
+          description,
+          location: 'Online',
+          source: 'kaggle',
+        });
+      }),
   };
 }
