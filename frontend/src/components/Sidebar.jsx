@@ -1,5 +1,8 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import logoDark from '../assets/dev-arena-logos/dev-arena-logo-dark.png';
+import logoLight from '../assets/dev-arena-logos/dev-arena-logo-light.png';
 
 // Icons (using simple SVG paths)
 const HomeIcon = () => (
@@ -41,6 +44,9 @@ const navItems = [
 
 export default function Sidebar() {
   const { isAuthenticated } = useAuth();
+  const { resolvedTheme } = useTheme();
+
+  const logoSrc = resolvedTheme === 'dark' ? logoLight : logoDark;
 
   return (
     <aside
@@ -50,68 +56,62 @@ export default function Sidebar() {
         top: 0,
         bottom: 0,
         width: 240,
-        background: 'var(--surface-100)',
-        borderRight: '1px solid var(--border-primary)',
+        background: 'var(--sidebar)',
+        borderRight: '1px solid var(--sidebar-border)',
         display: 'flex',
         flexDirection: 'column',
         padding: '20px 14px',
         zIndex: 50,
       }}
     >
+      {/* Back to Landing Page */}
+      <div style={{ marginBottom: 20, paddingLeft: 6 }}>
+        <NavLink 
+          to="/landing" 
+          style={{ 
+            fontSize: '0.6875rem', 
+            color: 'var(--muted-foreground)', 
+            textDecoration: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            fontFamily: 'var(--font-ui)',
+            fontWeight: 500,
+            transition: 'color 0.2s ease'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.color = 'var(--foreground)'}
+          onMouseLeave={(e) => e.currentTarget.style.color = 'var(--muted-foreground)'}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+          Back to Landing Page
+        </NavLink>
+      </div>
+
       {/* Logo */}
       <div style={{ marginBottom: 24, paddingLeft: 6 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 6,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-            className="logo-box"
-          >
-            <span
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 10,
-                fontWeight: 400,
-                letterSpacing: '0.16em',
-              }}
-              className="logo-box"
-            >
-              DA
-            </span>
-          </div>
-          <div>
-            <p
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: '1.0625rem',
-                fontWeight: 400,
-                letterSpacing: '-0.11px',
-                color: 'var(--color-dark)',
-                lineHeight: 1.2,
-                margin: 0,
-              }}
-            >
-              DevArena
-            </p>
-            <p
-              style={{
-                fontFamily: 'var(--font-ui)',
-                fontSize: '0.5625rem',
-                letterSpacing: '0.24em',
-                textTransform: 'uppercase',
-                color: 'var(--text-secondary)',
-                margin: 0,
-              }}
-            >
-              Competition radar
-            </p>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <img 
+            src={logoSrc} 
+            alt="DevArena" 
+            style={{ 
+              height: 28, 
+              width: 'auto',
+              objectFit: 'contain'
+            }} 
+          />
+          <span style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '1.125rem',
+            fontWeight: 600,
+            color: 'var(--foreground)',
+            letterSpacing: '-0.02em'
+          }}>
+            DevArena
+          </span>
         </div>
       </div>
 
@@ -131,14 +131,14 @@ export default function Sidebar() {
                   alignItems: 'center',
                   gap: 10,
                   padding: '10px 14px',
-                  borderRadius: 8,
+                  borderRadius: 'var(--radius)',
                   textDecoration: 'none',
                   fontFamily: 'var(--font-ui)',
                   fontSize: '0.9375rem',
                   fontWeight: 500,
                   transition: 'all 150ms ease',
-                  background: isActive ? '#26251e' : 'transparent',
-                  color: isActive ? '#fef9f0' : 'var(--text-secondary)',
+                  background: 'transparent',
+                  color: 'var(--sidebar-foreground)',
                 })}
                 className={({ isActive }) => isActive ? 'nav-link-active' : ''}
               >

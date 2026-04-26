@@ -7,7 +7,7 @@ export default function SectionHeading({ eyebrow, title, body, align = 'left' })
           {eyebrow}
         </p>
       )}
-      <h2 className="text-section" style={{ margin: 0, color: 'var(--color-dark)' }}>
+      <h2 className="text-section" style={{ margin: 0, color: 'var(--foreground)' }}>
         {title}
       </h2>
       {body && (
@@ -16,7 +16,7 @@ export default function SectionHeading({ eyebrow, title, body, align = 'left' })
           style={{
             marginTop: 16,
             maxWidth: 560,
-            color: 'var(--text-secondary)',
+            color: 'var(--muted-foreground)',
             marginLeft: centered ? 'auto' : undefined,
             marginRight: centered ? 'auto' : undefined,
           }}

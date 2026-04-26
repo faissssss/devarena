@@ -6,8 +6,8 @@ export default function AppShellWithSidebar() {
     <div
       className="min-h-dvh"
       style={{ 
-        background: 'var(--color-cream)', 
-        color: 'var(--color-dark)', 
+        background: 'var(--background)', 
+        color: 'var(--foreground)', 
         display: 'flex',
         overflowX: 'hidden',
         width: '100%',

@@ -11,7 +11,7 @@ const labelStyle = {
   fontFamily: 'var(--font-ui)',
   fontSize: '0.8125rem',
   fontWeight: 500,
-  color: 'var(--text-secondary)',
+  color: 'var(--muted-foreground)',
   marginBottom: 6,
 };
 
@@ -100,13 +100,13 @@ export default function ProfilePage() {
     return (
       <div
         style={{
-          background: 'var(--surface-100)',
-          border: '1px solid var(--border-primary)',
-          borderRadius: 12,
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)',
           padding: '24px',
         }}
       >
-        <div className="skeleton" style={{ width: 56, height: 56, borderRadius: 12, marginBottom: 16 }} />
+        <div className="skeleton" style={{ width: 56, height: 56, borderRadius: 'var(--radius)', marginBottom: 16 }} />
         <div className="skeleton" style={{ height: 10, width: '40%', marginBottom: 8 }} />
         <div className="skeleton" style={{ height: 20, width: '60%', marginBottom: 6 }} />
         <div className="skeleton" style={{ height: 14, width: '80%', marginBottom: 20 }} />
@@ -157,10 +157,10 @@ export default function ProfilePage() {
           style={{
             fontFamily: 'var(--font-ui)',
             fontSize: '0.875rem',
-            color: 'var(--color-error)',
-            background: 'rgba(207,45,86,0.08)',
-            border: '1px solid rgba(207,45,86,0.20)',
-            borderRadius: 8,
+            color: 'var(--destructive)',
+            background: 'transparent',
+            border: '1px solid var(--destructive)',
+            borderRadius: 'var(--radius)',
             padding: '12px 16px',
             margin: 0,
           }}
@@ -188,9 +188,9 @@ export default function ProfilePage() {
           ) : (
             <div
               style={{
-                background: 'var(--surface-100)',
-                border: '1px solid var(--border-primary)',
-                borderRadius: 12,
+                background: 'var(--card)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)',
                 padding: '24px',
               }}
             >
@@ -206,7 +206,7 @@ export default function ProfilePage() {
                   style={{
                     width: 72,
                     height: 72,
-                    borderRadius: 12,
+                    borderRadius: 'var(--radius)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -233,8 +233,8 @@ export default function ProfilePage() {
                     right: -4,
                     width: 28,
                     height: 28,
-                    borderRadius: 6,
-                    border: '2px solid var(--surface-100)',
+                    borderRadius: 'var(--radius)',
+                    border: '2px solid var(--card)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -255,7 +255,7 @@ export default function ProfilePage() {
                   fontSize: '1.5rem',
                   fontWeight: 400,
                   letterSpacing: '-0.11px',
-                  color: 'var(--color-dark)',
+                  color: 'var(--foreground)',
                   margin: '0 0 4px',
                 }}
               >
@@ -265,7 +265,7 @@ export default function ProfilePage() {
                 style={{
                   fontFamily: 'var(--font-ui)',
                   fontSize: '0.875rem',
-                  color: 'var(--text-secondary)',
+                  color: 'var(--muted-foreground)',
                   margin: '0 0 20px',
                 }}
               >
@@ -279,7 +279,7 @@ export default function ProfilePage() {
                   gridTemplateColumns: '1fr 1fr',
                   gap: 12,
                   padding: '16px 0',
-                  borderTop: '1px solid var(--border-primary)',
+                  borderTop: '1px solid var(--border)',
                 }}
               >
                 <div>
@@ -290,7 +290,7 @@ export default function ProfilePage() {
                       background: roleBg,
                       color: roleColor,
                       padding: '3px 10px',
-                      borderRadius: 9999,
+                      borderRadius: 'var(--radius)',
                       fontSize: '0.625rem',
                       fontWeight: 500,
                       letterSpacing: '0.16em',
@@ -308,7 +308,7 @@ export default function ProfilePage() {
                       fontFamily: 'var(--font-display)',
                       fontSize: '1.125rem',
                       fontWeight: 400,
-                      color: 'var(--color-dark)',
+                      color: 'var(--foreground)',
                     }}
                   >
                     {stats.bookmarkCount}
@@ -316,7 +316,7 @@ export default function ProfilePage() {
                 </div>
                 <div style={{ gridColumn: '1 / -1' }}>
                   <p className="text-eyebrow" style={{ marginBottom: 4, fontSize: '0.625rem' }}>Member since</p>
-                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.8125rem', color: 'var(--color-dark)', fontWeight: 500 }}>
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.8125rem', color: 'var(--foreground)', fontWeight: 500 }}>
                     {user?.created_at ? new Date(user.created_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : '—'}
                   </span>
                 </div>
@@ -328,9 +328,9 @@ export default function ProfilePage() {
           <form
             onSubmit={updateProfile}
             style={{
-              background: 'var(--surface-100)',
-              border: '1px solid var(--border-primary)',
-              borderRadius: 12,
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
               padding: '24px',
             }}
           >
@@ -340,7 +340,7 @@ export default function ProfilePage() {
                 fontSize: '1.125rem',
                 fontWeight: 400,
                 letterSpacing: '-0.08px',
-                color: 'var(--color-dark)',
+                color: 'var(--foreground)',
                 margin: '0 0 16px',
               }}
             >
@@ -383,9 +383,9 @@ export default function ProfilePage() {
           <form
             onSubmit={changePassword}
             style={{
-              background: 'var(--surface-100)',
-              border: '1px solid var(--border-primary)',
-              borderRadius: 12,
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
               padding: '24px',
             }}
           >
@@ -395,7 +395,7 @@ export default function ProfilePage() {
                 fontSize: '1.125rem',
                 fontWeight: 400,
                 letterSpacing: '-0.08px',
-                color: 'var(--color-dark)',
+                color: 'var(--foreground)',
                 margin: '0 0 6px',
               }}
             >
@@ -405,7 +405,7 @@ export default function ProfilePage() {
               style={{
                 fontFamily: 'var(--font-ui)',
                 fontSize: '0.8125rem',
-                color: 'var(--text-secondary)',
+                color: 'var(--muted-foreground)',
                 margin: '0 0 16px',
               }}
             >
@@ -438,7 +438,7 @@ export default function ProfilePage() {
                       background: 'none',
                       border: 'none',
                       cursor: 'pointer',
-                      color: 'var(--text-tertiary)',
+                      color: 'var(--muted-foreground)',
                       padding: 4,
                       display: 'flex',
                       alignItems: 'center',
@@ -484,7 +484,7 @@ export default function ProfilePage() {
                       background: 'none',
                       border: 'none',
                       cursor: 'pointer',
-                      color: 'var(--text-tertiary)',
+                      color: 'var(--muted-foreground)',
                       padding: 4,
                       display: 'flex',
                       alignItems: 'center',
@@ -520,9 +520,9 @@ export default function ProfilePage() {
           {/* Appearance Card */}
           <div
             style={{
-              background: 'var(--surface-100)',
-              border: '1px solid var(--border-primary)',
-              borderRadius: 12,
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
               padding: '24px',
             }}
           >
@@ -532,7 +532,7 @@ export default function ProfilePage() {
                 fontSize: '1.125rem',
                 fontWeight: 400,
                 letterSpacing: '-0.08px',
-                color: 'var(--color-dark)',
+                color: 'var(--foreground)',
                 margin: '0 0 6px',
               }}
             >
@@ -542,7 +542,7 @@ export default function ProfilePage() {
               style={{
                 fontFamily: 'var(--font-ui)',
                 fontSize: '0.8125rem',
-                color: 'var(--text-secondary)',
+                color: 'var(--muted-foreground)',
                 margin: '0 0 16px',
               }}
             >
@@ -599,20 +599,20 @@ export default function ProfilePage() {
                     alignItems: 'center',
                     gap: 12,
                     padding: '12px 14px',
-                    background: theme === themeOption.value ? 'var(--surface-300)' : 'transparent',
-                    border: `1px solid ${theme === themeOption.value ? 'var(--border-medium)' : 'var(--border-primary)'}`,
-                    borderRadius: 8,
+                    background: theme === themeOption.value ? 'var(--secondary)' : 'transparent',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
                     cursor: 'pointer',
                     transition: 'all 150ms ease',
                     fontFamily: 'var(--font-ui)',
                     fontSize: '0.875rem',
                     fontWeight: 500,
-                    color: 'var(--color-dark)',
+                    color: 'var(--foreground)',
                     textAlign: 'left',
                   }}
                   onMouseEnter={(e) => {
                     if (theme !== themeOption.value) {
-                      e.currentTarget.style.background = 'var(--surface-200)';
+                      e.currentTarget.style.background = 'var(--secondary)';
                     }
                   }}
                   onMouseLeave={(e) => {
@@ -621,12 +621,12 @@ export default function ProfilePage() {
                     }
                   }}
                 >
-                  <span style={{ display: 'flex', alignItems: 'center', color: theme === themeOption.value ? 'var(--color-dark)' : 'var(--text-secondary)' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', color: theme === themeOption.value ? 'var(--foreground)' : 'var(--muted-foreground)' }}>
                     {themeOption.icon}
                   </span>
                   <span style={{ flex: 1 }}>{themeOption.label}</span>
                   {theme === themeOption.value && (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   )}
@@ -638,9 +638,9 @@ export default function ProfilePage() {
           {/* Account Actions Card */}
           <div
             style={{
-              background: 'var(--surface-100)',
-              border: '1px solid var(--border-primary)',
-              borderRadius: 12,
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
               padding: '24px',
             }}
           >
@@ -650,7 +650,7 @@ export default function ProfilePage() {
                 fontSize: '1.125rem',
                 fontWeight: 400,
                 letterSpacing: '-0.08px',
-                color: 'var(--color-dark)',
+                color: 'var(--foreground)',
                 margin: '0 0 6px',
               }}
             >
@@ -660,7 +660,7 @@ export default function ProfilePage() {
               style={{
                 fontFamily: 'var(--font-ui)',
                 fontSize: '0.8125rem',
-                color: 'var(--text-secondary)',
+                color: 'var(--muted-foreground)',
                 margin: '0 0 16px',
               }}
             >
@@ -672,17 +672,17 @@ export default function ProfilePage() {
               className="btn"
               style={{
                 padding: '9px 18px',
-                background: 'var(--surface-300)',
-                color: 'var(--color-dark)',
-                border: '1px solid var(--border-primary)',
-                borderRadius: 6,
+                background: 'var(--secondary)',
+                color: 'var(--secondary-foreground)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)',
                 transition: 'all 150ms ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--surface-400)';
+                e.currentTarget.style.background = 'var(--muted)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'var(--surface-300)';
+                e.currentTarget.style.background = 'var(--secondary)';
               }}
             >
               Log out

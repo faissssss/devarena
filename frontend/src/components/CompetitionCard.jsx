@@ -4,23 +4,23 @@ import { formatPrize } from '../utils/prizeFormatter';
 import { formatTitle } from '../utils/textFormatter';
 
 const statusColors = {
-  upcoming:  { bg: 'rgba(31,138,101,0.10)', color: '#1f8a65' },
-  ongoing:   { bg: 'rgba(245,78,0,0.10)',   color: '#f54e00' },
-  ended:     { bg: 'rgba(38,37,30,0.08)',   color: 'var(--text-secondary)' },
+  upcoming:  { bg: 'var(--muted)', color: 'var(--foreground)' },
+  ongoing:   { bg: 'var(--primary)', color: 'var(--primary-foreground)' },
+  ended:     { bg: 'var(--secondary)', color: 'var(--muted-foreground)' },
 };
 
-// Category color coding for all 10 categories
+// Category color coding using monochrome standard
 const categoryColors = {
-  'Competitive Programming': { bg: 'rgba(245,78,0,0.10)', color: '#f54e00' },
-  'AI/Data Science': { bg: 'rgba(147,51,234,0.10)', color: '#9333ea' },
-  'Hackathons': { bg: 'rgba(59,130,246,0.10)', color: '#3b82f6' },
-  'CTF/Security': { bg: 'rgba(239,68,68,0.10)', color: '#ef4444' },
-  'Web3/Blockchain': { bg: 'rgba(251,191,36,0.10)', color: '#fbbf24' },
-  'Game Development': { bg: 'rgba(168,85,247,0.10)', color: '#a855f7' },
-  'Mobile Development': { bg: 'rgba(34,197,94,0.10)', color: '#22c55e' },
-  'Design/UI/UX': { bg: 'rgba(236,72,153,0.10)', color: '#ec4899' },
-  'Cloud/DevOps': { bg: 'rgba(14,165,233,0.10)', color: '#0ea5e9' },
-  'Other': { bg: 'rgba(107,114,128,0.10)', color: '#6b7280' },
+  'Competitive Programming': { bg: 'var(--muted)', color: 'var(--foreground)' },
+  'AI/Data Science': { bg: 'var(--muted)', color: 'var(--foreground)' },
+  'Hackathons': { bg: 'var(--muted)', color: 'var(--foreground)' },
+  'CTF/Security': { bg: 'var(--muted)', color: 'var(--foreground)' },
+  'Web3/Blockchain': { bg: 'var(--muted)', color: 'var(--foreground)' },
+  'Game Development': { bg: 'var(--muted)', color: 'var(--foreground)' },
+  'Mobile Development': { bg: 'var(--muted)', color: 'var(--foreground)' },
+  'Design/UI/UX': { bg: 'var(--muted)', color: 'var(--foreground)' },
+  'Cloud/DevOps': { bg: 'var(--muted)', color: 'var(--foreground)' },
+  'Other': { bg: 'var(--accent)', color: 'var(--accent-foreground)' },
 };
 
 function DeadlinePill({ endDate, status }) {
@@ -33,10 +33,10 @@ function DeadlinePill({ endDate, status }) {
           display: 'inline-flex',
           alignItems: 'center',
           gap: 4,
-          background: 'rgba(207,45,86,0.10)',
-          color: 'var(--color-error)',
+          background: 'var(--destructive)',
+          color: 'var(--destructive-foreground)',
           padding: '4px 10px',
-          borderRadius: 6,
+          borderRadius: 'var(--radius)',
           fontSize: '0.6875rem',
           fontWeight: 500,
           letterSpacing: '0.12em',
@@ -49,7 +49,7 @@ function DeadlinePill({ endDate, status }) {
             width: 5,
             height: 5,
             borderRadius: '50%',
-            background: 'var(--color-error)',
+            background: 'var(--destructive-foreground)',
             display: 'inline-block',
           }}
         />
@@ -66,7 +66,7 @@ function DeadlinePill({ endDate, status }) {
         background: s.bg,
         color: s.color,
         padding: '4px 10px',
-        borderRadius: 6,
+        borderRadius: 'var(--radius)',
         fontSize: '0.6875rem',
         fontWeight: 500,
         letterSpacing: '0.12em',
@@ -104,7 +104,7 @@ export default function CompetitionCard({
         display: 'flex',
         flexDirection: 'column',
         gap: 0,
-        background: 'var(--surface-100)',
+        background: 'var(--card)',
         transition: 'box-shadow 200ms ease, transform 200ms ease',
         cursor: 'pointer',
         minHeight: 0,
@@ -112,7 +112,7 @@ export default function CompetitionCard({
         boxSizing: 'border-box',
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = 'rgba(0,0,0,0.16) 0px 24px 60px, rgba(0,0,0,0.10) 0px 8px 24px, rgba(38,37,30,0.12) 0px 0px 0px 1px';
+        e.currentTarget.style.boxShadow = 'none';
         e.currentTarget.style.transform = 'translateY(-2px)';
       }}
       onMouseLeave={(e) => {
@@ -133,7 +133,7 @@ export default function CompetitionCard({
             className="text-title"
             style={{
               margin: 0,
-              color: 'var(--color-dark)',
+              color: 'var(--foreground)',
               overflow: 'hidden',
               display: '-webkit-box',
               WebkitLineClamp: 2,
@@ -152,7 +152,7 @@ export default function CompetitionCard({
               background: categoryStyle.bg,
               color: categoryStyle.color,
               padding: '3px 10px',
-              borderRadius: 9999,
+              borderRadius: 'var(--radius)',
               fontSize: '0.625rem',
               fontWeight: 500,
               letterSpacing: '0.16em',
@@ -174,8 +174,8 @@ export default function CompetitionCard({
             className={`btn ${bookmarkId ? 'bookmark-saved' : 'bookmark-unsaved'}`}
             style={{
               flexShrink: 0,
-              border: '1px solid var(--border-primary)',
-              borderRadius: 6,
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
               padding: '6px 12px',
               fontSize: '0.6875rem',
               fontWeight: 500,
@@ -200,7 +200,7 @@ export default function CompetitionCard({
           className="text-body-serif"
           style={{
             margin: '0 0 12px',
-            color: 'var(--text-secondary)',
+            color: 'var(--muted-foreground)',
             overflow: 'hidden',
             display: '-webkit-box',
             WebkitLineClamp: 2,
@@ -222,7 +222,7 @@ export default function CompetitionCard({
           gridTemplateColumns: '1fr 1fr',
           gap: '8px 12px',
           marginBottom: 12,
-          borderTop: '1px solid var(--border-primary)',
+          borderTop: '1px solid var(--border)',
           paddingTop: 12,
         }}
       >
@@ -252,7 +252,7 @@ export default function CompetitionCard({
                 fontFamily: 'var(--font-ui)',
                 fontSize: '0.8125rem',
                 fontWeight: 500,
-                color: 'var(--color-dark)',
+                color: 'var(--foreground)',
                 lineHeight: 1.3,
               }}
             >
@@ -271,14 +271,14 @@ export default function CompetitionCard({
             fontFamily: 'var(--font-ui)',
             fontSize: '0.8125rem',
             fontWeight: 600,
-            color: 'var(--color-accent)',
+            color: 'var(--primary)',
             textDecoration: 'none',
             transition: 'color 150ms ease',
             letterSpacing: '0.01em',
             whiteSpace: 'nowrap',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = '#d94400')}
-          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-accent)')}
+          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--foreground)')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--primary)')}
         >
           View details →
         </Link>

@@ -114,7 +114,7 @@ export default function PlatformMultiSelect({
         <span className="truncate">{buttonText}</span>
         {selectedCount > 0 && (
           <span
-            className="ml-2 flex-shrink-0 inline-flex items-center justify-center bg-[#f54e00] text-white rounded-full"
+            className="ml-2 flex-shrink-0 inline-flex items-center justify-center bg-primary text-primary-foreground rounded-full"
             style={{
               minWidth: '20px',
               height: '20px',
@@ -144,10 +144,10 @@ export default function PlatformMultiSelect({
             zIndex: 50,
             marginTop: 8,
             width: '100%',
-            background: 'var(--surface-200)',
-            border: '1px solid var(--border-primary)',
-            borderRadius: 8,
-            boxShadow: 'var(--shadow-card)',
+            background: 'var(--popover)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            boxShadow: 'none',
             maxHeight: 400,
             display: 'flex',
             flexDirection: 'column',
@@ -155,7 +155,7 @@ export default function PlatformMultiSelect({
           role="listbox"
         >
           {/* Search input */}
-          <div style={{ padding: 12, borderBottom: '1px solid var(--border-primary)' }}>
+          <div style={{ padding: 12, borderBottom: '1px solid var(--border)' }}>
             <input
               type="search"
               placeholder="Search platforms..."
@@ -172,7 +172,7 @@ export default function PlatformMultiSelect({
           </div>
 
           {/* Action buttons */}
-          <div style={{ display: 'flex', gap: 8, padding: 12, borderBottom: '1px solid var(--border-primary)' }}>
+          <div style={{ display: 'flex', gap: 8, padding: 12, borderBottom: '1px solid var(--border)' }}>
             <button
               type="button"
               onClick={handleSelectAll}
@@ -196,10 +196,10 @@ export default function PlatformMultiSelect({
                 flex: 1,
                 padding: '6px 12px',
                 fontSize: '0.75rem',
-                color: 'var(--color-error)',
+                color: 'var(--destructive)',
                 background: 'transparent',
-                border: '1px solid rgba(207,45,86,0.2)',
-                borderRadius: 6,
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)',
                 cursor: selectedCount === 0 ? 'not-allowed' : 'pointer',
                 opacity: selectedCount === 0 ? 0.5 : 1,
                 transition: 'background-color 150ms ease',
@@ -208,7 +208,7 @@ export default function PlatformMultiSelect({
               }}
               onMouseEnter={(e) => {
                 if (selectedCount > 0) {
-                  e.currentTarget.style.background = 'rgba(207,45,86,0.05)';
+                  e.currentTarget.style.background = 'var(--muted)';
                 }
               }}
               onMouseLeave={(e) => {
@@ -226,7 +226,7 @@ export default function PlatformMultiSelect({
                 padding: 16, 
                 textAlign: 'center', 
                 fontSize: '0.875rem', 
-                color: 'var(--text-secondary)',
+                color: 'var(--muted-foreground)',
                 fontFamily: 'var(--font-ui)',
               }}>
                 Loading platforms...
@@ -236,7 +236,7 @@ export default function PlatformMultiSelect({
                 padding: 16, 
                 textAlign: 'center', 
                 fontSize: '0.875rem', 
-                color: 'var(--text-secondary)',
+                color: 'var(--muted-foreground)',
                 fontFamily: 'var(--font-ui)',
               }}>
                 {searchQuery ? 'No platforms found' : 'No platforms available'}
@@ -257,7 +257,7 @@ export default function PlatformMultiSelect({
                         cursor: 'pointer',
                         transition: 'background-color 150ms ease',
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-300)'}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                       role="option"
                       aria-selected={isSelected}
@@ -269,15 +269,15 @@ export default function PlatformMultiSelect({
                         style={{
                           width: 16,
                           height: 16,
-                          borderRadius: 4,
-                          border: '1px solid var(--border-medium)',
-                          accentColor: 'var(--color-accent)',
+                          borderRadius: 'var(--radius)',
+                          border: '1px solid var(--border)',
+                          accentColor: 'var(--primary)',
                           cursor: 'pointer',
                         }}
                       />
                       <span style={{ 
                         fontSize: '0.875rem', 
-                        color: 'var(--color-dark)', 
+                        color: 'var(--foreground)', 
                         flex: 1,
                         fontFamily: 'var(--font-ui)',
                       }}>

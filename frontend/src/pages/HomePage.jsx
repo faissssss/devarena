@@ -95,7 +95,7 @@ export default function HomePage() {
             fontSize: '1.375rem',
             fontWeight: 400,
             letterSpacing: '-0.11px',
-            color: 'var(--color-dark)',
+            color: 'var(--foreground)',
             margin: 0,
           }}
         >
@@ -107,12 +107,12 @@ export default function HomePage() {
             fontFamily: 'var(--font-ui)',
             fontSize: '0.8125rem',
             fontWeight: 600,
-            color: 'var(--color-accent)',
+            color: 'var(--primary)',
             textDecoration: 'none',
             transition: 'color 150ms ease',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = '#d94400')}
-          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-accent)')}
+          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--foreground)')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--primary)')}
         >
           View all →
         </Link>
@@ -124,9 +124,9 @@ export default function HomePage() {
     return (
       <div
         style={{
-          background: 'var(--surface-100)',
-          border: '1px solid var(--border-primary)',
-          borderRadius: 10,
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)',
           padding: '18px 20px',
           display: 'flex',
           flexDirection: 'column',
@@ -166,14 +166,14 @@ export default function HomePage() {
         ) : competitions.length === 0 ? (
           <div
             style={{
-              background: 'var(--surface-100)',
-              border: '1px dashed var(--border-medium)',
-              borderRadius: 10,
+              background: 'var(--card)',
+              border: '1px dashed var(--border)',
+              borderRadius: 'var(--radius)',
               padding: '40px 32px',
               textAlign: 'center',
             }}
           >
-            <p style={{ fontFamily: 'var(--font-ui)', color: 'var(--text-secondary)', margin: 0 }}>
+            <p style={{ fontFamily: 'var(--font-ui)', color: 'var(--muted-foreground)', margin: 0 }}>
               No competitions available at the moment.
             </p>
           </div>
@@ -217,7 +217,7 @@ export default function HomePage() {
             fontSize: '2.25rem',
             fontWeight: 400,
             letterSpacing: '-0.72px',
-            color: 'var(--color-dark)',
+            color: 'var(--foreground)',
             margin: 0,
           }}
         >
@@ -225,7 +225,7 @@ export default function HomePage() {
         </h1>
         <p
           className="text-body-serif"
-          style={{ color: 'var(--text-secondary)', margin: '8px 0 0', fontSize: '0.9375rem' }}
+          style={{ color: 'var(--muted-foreground)', margin: '8px 0 0', fontSize: '0.9375rem' }}
         >
           Curated selections from across the developer competition landscape.
         </p>
@@ -238,10 +238,10 @@ export default function HomePage() {
           style={{
             fontFamily: 'var(--font-ui)',
             fontSize: '0.875rem',
-            color: 'var(--color-error)',
-            background: 'rgba(207,45,86,0.08)',
-            border: '1px solid rgba(207,45,86,0.20)',
-            borderRadius: 6,
+            color: 'var(--destructive)',
+            background: 'transparent',
+            border: '1px solid var(--destructive)',
+            borderRadius: 'var(--radius)',
             padding: '10px 14px',
           }}
         >

@@ -29,6 +29,12 @@ export function ThemeProvider({ children }) {
     // Apply theme to document
     document.documentElement.setAttribute('data-theme', actualTheme);
     document.documentElement.style.colorScheme = actualTheme;
+    
+    if (actualTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
 
     // Listen for system theme changes when in system mode
     if (theme === 'system') {
@@ -38,6 +44,11 @@ export function ThemeProvider({ children }) {
         setResolvedTheme(newTheme);
         document.documentElement.setAttribute('data-theme', newTheme);
         document.documentElement.style.colorScheme = newTheme;
+        if (newTheme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
       };
 
       mediaQuery.addEventListener('change', handleChange);

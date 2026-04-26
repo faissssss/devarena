@@ -72,7 +72,7 @@ function FilterSelect({ id, label, value, onChange, children }) {
           fontFamily: 'var(--font-ui)',
           fontSize: '0.6875rem',
           fontWeight: 500,
-          color: 'var(--text-secondary)',
+          color: 'var(--muted-foreground)',
           marginBottom: 6,
           letterSpacing: '0.06em',
           textTransform: 'uppercase',
@@ -97,9 +97,9 @@ function SkeletonCard() {
   return (
     <div
       style={{
-        background: 'var(--surface-100)',
-        border: '1px solid var(--border-primary)',
-        borderRadius: 10,
+        background: 'var(--card)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius)',
         padding: '18px 20px',
         display: 'flex',
         flexDirection: 'column',
@@ -271,7 +271,7 @@ export default function ExplorePage() {
               fontSize: '2.25rem',
               fontWeight: 400,
               letterSpacing: '-0.72px',
-              color: 'var(--color-dark)',
+              color: 'var(--foreground)',
               margin: 0,
             }}
           >
@@ -279,7 +279,7 @@ export default function ExplorePage() {
           </h1>
           <p
             className="text-body-serif"
-            style={{ color: 'var(--text-secondary)', margin: '8px 0 0', fontSize: '0.9375rem' }}
+            style={{ color: 'var(--muted-foreground)', margin: '8px 0 0', fontSize: '0.9375rem' }}
           >
             Search and filter through competitions from across the developer landscape.
           </p>
@@ -296,7 +296,7 @@ export default function ExplorePage() {
                 transform: 'translateY(-50%)',
                 width: 18,
                 height: 18,
-                color: 'var(--text-secondary)',
+                color: 'var(--muted-foreground)',
                 pointerEvents: 'none',
               }}
               fill="none"
@@ -332,8 +332,8 @@ export default function ExplorePage() {
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              border: '1px solid var(--border-primary)',
-              borderRadius: 6,
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
               fontSize: '0.8125rem',
               fontWeight: 500,
               letterSpacing: '0.02em',
@@ -360,8 +360,8 @@ export default function ExplorePage() {
             className={`btn ${filters.featured && !filters.category && !filters.search && !filters.platforms?.length && !filters.source && !filters.status ? 'chip-active' : 'chip-inactive'}`}
             style={{
               padding: '6px 14px',
-              border: '1px solid var(--border-primary)',
-              borderRadius: 9999,
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
               fontSize: '0.8125rem',
               fontWeight: 500,
               transition: 'all 150ms ease',
@@ -379,8 +379,8 @@ export default function ExplorePage() {
             className={`btn ${!filters.status && !filters.category && !filters.search && !filters.platforms?.length && !filters.source && !filters.featured ? 'chip-active' : 'chip-inactive'}`}
             style={{
               padding: '6px 14px',
-              border: '1px solid var(--border-primary)',
-              borderRadius: 9999,
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
               fontSize: '0.8125rem',
               fontWeight: 500,
               transition: 'all 150ms ease',
@@ -398,8 +398,8 @@ export default function ExplorePage() {
             className={`btn ${filters.status === 'upcoming' && !filters.category && !filters.search && !filters.platforms?.length && !filters.source && !filters.featured ? 'chip-active' : 'chip-inactive'}`}
             style={{
               padding: '6px 14px',
-              border: '1px solid var(--border-primary)',
-              borderRadius: 9999,
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
               fontSize: '0.8125rem',
               fontWeight: 500,
               transition: 'all 150ms ease',
@@ -416,10 +416,10 @@ export default function ExplorePage() {
             style={{
               fontFamily: 'var(--font-ui)',
               fontSize: '0.875rem',
-              color: 'var(--color-error)',
-              background: 'rgba(207,45,86,0.08)',
-              border: '1px solid rgba(207,45,86,0.20)',
-              borderRadius: 6,
+              color: 'var(--destructive)',
+              background: 'transparent',
+              border: '1px solid var(--destructive)',
+              borderRadius: 'var(--radius)',
               padding: '10px 14px',
               marginBottom: 16,
             }}
@@ -440,9 +440,9 @@ export default function ExplorePage() {
         ) : data.competitions.length === 0 ? (
           <div
             style={{
-              background: 'var(--surface-100)',
-              border: '1px dashed var(--border-medium)',
-              borderRadius: 10,
+              background: 'var(--card)',
+              border: '1px dashed var(--border)',
+              borderRadius: 'var(--radius)',
               padding: '48px 32px',
               textAlign: 'center',
             }}
@@ -452,7 +452,7 @@ export default function ExplorePage() {
                 width: 56,
                 height: 56,
                 margin: '0 auto 12px',
-                color: 'var(--text-tertiary)',
+                color: 'var(--muted-foreground)',
               }}
               fill="none"
               stroke="currentColor"
@@ -466,13 +466,13 @@ export default function ExplorePage() {
                 fontFamily: 'var(--font-display)',
                 fontSize: '1.125rem',
                 fontWeight: 400,
-                color: 'var(--color-dark)',
+                color: 'var(--foreground)',
                 margin: '0 0 6px',
               }}
             >
               No competitions found
             </p>
-            <p className="text-body-serif" style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.875rem' }}>
+            <p className="text-body-serif" style={{ color: 'var(--muted-foreground)', margin: 0, fontSize: '0.875rem' }}>
               Try adjusting your filters or search terms to discover more competitions.
             </p>
           </div>
@@ -503,9 +503,9 @@ export default function ExplorePage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  background: 'var(--surface-100)',
-                  border: '1px solid var(--border-primary)',
-                  borderRadius: 8,
+                  background: 'var(--card)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)',
                   padding: '10px 14px',
                   marginTop: 24,
                 }}
@@ -529,7 +529,7 @@ export default function ExplorePage() {
                     fontFamily: 'var(--font-ui)',
                     fontSize: '0.8125rem',
                     fontWeight: 500,
-                    color: 'var(--text-secondary)',
+                    color: 'var(--muted-foreground)',
                   }}
                 >
                   Page {data.page} of {data.totalPages}
@@ -563,8 +563,8 @@ export default function ExplorePage() {
             right: 0,
             top: 0,
             bottom: 0,
-            background: 'var(--surface-100)',
-            borderLeft: '1px solid var(--border-primary)',
+            background: 'var(--card)',
+            borderLeft: '1px solid var(--sidebar-border)',
             padding: '24px 20px',
             overflowY: 'auto',
             display: 'flex',
@@ -580,7 +580,7 @@ export default function ExplorePage() {
                 fontSize: '1.0625rem',
                 fontWeight: 400,
                 letterSpacing: '-0.11px',
-                color: 'var(--color-dark)',
+                color: 'var(--foreground)',
                 margin: '0 0 3px',
               }}
             >
@@ -590,7 +590,7 @@ export default function ExplorePage() {
               style={{
                 fontFamily: 'var(--font-ui)',
                 fontSize: '0.8125rem',
-                color: 'var(--text-secondary)',
+                color: 'var(--muted-foreground)',
                 margin: 0,
               }}
             >
@@ -607,7 +607,7 @@ export default function ExplorePage() {
                 fontFamily: 'var(--font-ui)',
                 fontSize: '0.6875rem',
                 fontWeight: 500,
-                color: 'var(--text-secondary)',
+                color: 'var(--muted-foreground)',
                 marginBottom: 6,
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase',
@@ -624,8 +624,8 @@ export default function ExplorePage() {
                   flex: 1,
                   padding: '6px 8px',
                   fontSize: '0.75rem',
-                  borderRadius: 6,
-                  border: '1px solid var(--border-primary)',
+                  borderRadius: 'var(--radius)',
+                  border: '1px solid var(--border)',
                   cursor: 'pointer',
                   transition: 'all 150ms ease',
                   fontFamily: 'var(--font-ui)',
@@ -642,8 +642,8 @@ export default function ExplorePage() {
                   flex: 1,
                   padding: '6px 8px',
                   fontSize: '0.75rem',
-                  borderRadius: 6,
-                  border: '1px solid var(--border-primary)',
+                  borderRadius: 'var(--radius)',
+                  border: '1px solid var(--border)',
                   cursor: 'pointer',
                   transition: 'all 150ms ease',
                   fontFamily: 'var(--font-ui)',
@@ -738,7 +738,7 @@ export default function ExplorePage() {
                 fontFamily: 'var(--font-ui)',
                 fontSize: '0.6875rem',
                 fontWeight: 500,
-                color: 'var(--text-secondary)',
+                color: 'var(--muted-foreground)',
                 marginBottom: 6,
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase',

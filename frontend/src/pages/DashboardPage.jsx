@@ -61,9 +61,9 @@ export default function DashboardPage() {
           <div
             key={label}
             style={{
-              background: 'var(--surface-100)',
-              border: '1px solid var(--border-primary)',
-              borderRadius: 10,
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
               padding: '20px 22px',
             }}
           >
@@ -74,7 +74,7 @@ export default function DashboardPage() {
                 fontSize: '2.25rem',
                 fontWeight: 400,
                 letterSpacing: '-0.5px',
-                color: 'var(--color-dark)',
+                color: 'var(--foreground)',
                 margin: 0,
                 lineHeight: 1,
               }}
@@ -99,8 +99,8 @@ export default function DashboardPage() {
               fontSize: '0.8125rem',
               fontWeight: 500,
               padding: '8px 16px',
-              borderRadius: 6,
-              border: '1px solid var(--border-primary)',
+              borderRadius: 'var(--radius)',
+              border: '1px solid var(--border)',
               cursor: 'pointer',
               transition: 'background 150ms ease, color 150ms ease',
             }}
@@ -117,10 +117,10 @@ export default function DashboardPage() {
           style={{
             fontFamily: 'var(--font-ui)',
             fontSize: '0.875rem',
-            color: 'var(--color-error)',
-            background: 'rgba(207,45,86,0.08)',
-            border: '1px solid rgba(207,45,86,0.20)',
-            borderRadius: 6,
+            color: 'var(--destructive)',
+            background: 'transparent',
+            border: '1px solid var(--destructive)',
+            borderRadius: 'var(--radius)',
             padding: '10px 14px',
           }}
         >
@@ -135,9 +135,9 @@ export default function DashboardPage() {
             <div
               key={i}
               style={{
-                background: 'var(--surface-100)',
-                border: '1px solid var(--border-primary)',
-                borderRadius: 10,
+                background: 'var(--card)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)',
                 padding: '18px 20px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -153,9 +153,9 @@ export default function DashboardPage() {
       ) : visible.length === 0 ? (
         <div
           style={{
-            background: 'var(--surface-100)',
-            border: '1px dashed var(--border-medium)',
-            borderRadius: 10,
+            background: 'var(--card)',
+            border: '1px dashed var(--border)',
+            borderRadius: 'var(--radius)',
             padding: '64px 40px',
             textAlign: 'center',
           }}
@@ -166,13 +166,13 @@ export default function DashboardPage() {
               fontSize: '1.125rem',
               fontWeight: 400,
               letterSpacing: '-0.08px',
-              color: 'var(--color-dark)',
+              color: 'var(--foreground)',
               margin: '0 0 8px',
             }}
           >
             No bookmarks yet
           </p>
-          <p className="text-body-serif" style={{ color: 'var(--text-secondary)', margin: '0 0 24px', fontSize: '0.9375rem' }}>
+          <p className="text-body-serif" style={{ color: 'var(--muted-foreground)', margin: '0 0 24px', fontSize: '0.9375rem' }}>
             Head to Explore to find competitions worth tracking.
           </p>
           <a

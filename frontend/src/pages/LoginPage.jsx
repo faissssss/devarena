@@ -32,9 +32,9 @@ export default function LoginPage() {
     >
       <div
         style={{
-          background: 'var(--surface-100)',
-          border: '1px solid var(--border-primary)',
-          borderRadius: 16,
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)',
           padding: 'clamp(28px, 4vw, 44px)',
           boxShadow: 'rgba(0,0,0,0.08) 0px 20px 60px, rgba(0,0,0,0.04) 0px 8px 24px',
         }}
@@ -57,7 +57,7 @@ export default function LoginPage() {
                 fontFamily: 'var(--font-ui)',
                 fontSize: '0.8125rem',
                 fontWeight: 500,
-                color: 'var(--text-secondary)',
+                color: 'var(--muted-foreground)',
                 marginBottom: 6,
               }}
             >
@@ -84,7 +84,7 @@ export default function LoginPage() {
                 fontFamily: 'var(--font-ui)',
                 fontSize: '0.8125rem',
                 fontWeight: 500,
-                color: 'var(--text-secondary)',
+                color: 'var(--muted-foreground)',
                 marginBottom: 6,
               }}
             >
@@ -115,7 +115,7 @@ export default function LoginPage() {
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
-                  color: 'var(--text-tertiary)',
+                  color: 'var(--muted-foreground)',
                   padding: 4,
                   display: 'flex',
                   alignItems: 'center',
@@ -143,10 +143,10 @@ export default function LoginPage() {
               style={{
                 fontFamily: 'var(--font-ui)',
                 fontSize: '0.8125rem',
-                color: 'var(--color-error)',
-                background: 'rgba(207,45,86,0.08)',
-                border: '1px solid rgba(207,45,86,0.20)',
-                borderRadius: 8,
+                color: 'var(--destructive)',
+                background: 'transparent',
+                border: '1px solid var(--destructive)',
+                borderRadius: 'var(--radius)',
                 padding: '8px 12px',
                 margin: 0,
               }}
@@ -175,7 +175,7 @@ export default function LoginPage() {
           style={{
             fontFamily: 'var(--font-ui)',
             fontSize: '0.875rem',
-            color: 'var(--text-secondary)',
+            color: 'var(--muted-foreground)',
             marginTop: 20,
             textAlign: 'center',
           }}
@@ -184,7 +184,7 @@ export default function LoginPage() {
           <Link
             to="/register"
             style={{
-              color: 'var(--color-accent)',
+              color: 'var(--primary)',
               fontWeight: 600,
               textDecoration: 'none',
               transition: 'color 150ms ease',

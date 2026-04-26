@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import logoDark from '../assets/dev-arena-logos/dev-arena-logo-dark.png';
+import logoLight from '../assets/dev-arena-logos/dev-arena-logo-light.png';
 
 const navItems = [
   { to: '/',        label: 'Home' },
@@ -13,12 +16,18 @@ const navItems = [
 
 export default function AppShell() {
   const { isAuthenticated, isAdmin, logout, user } = useAuth();
+  const { resolvedTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Logo selection based on theme: 
+  // 'dark' resolvedTheme means the UI is dark, so we use the light logo.
+  // 'light' resolvedTheme means the UI is light, so we use the dark logo.
+  const logoSrc = resolvedTheme === 'dark' ? logoLight : logoDark;
 
   return (
     <div
       className="min-h-dvh"
-      style={{ background: 'var(--color-cream)', color: 'var(--color-dark)' }}
+      style={{ background: 'var(--background)', color: 'var(--foreground)' }}
     >
       {/* ── Navbar ── */}
       <header
@@ -26,10 +35,10 @@ export default function AppShell() {
           position: 'sticky',
           top: 0,
           zIndex: 40,
-          background: 'rgba(242,241,237,0.88)',
+          background: 'var(--background)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
-          borderBottom: '1px solid var(--border-primary)',
+          borderBottom: '1px solid var(--border)',
         }}
       >
         <div
@@ -45,59 +54,36 @@ export default function AppShell() {
           }}
         >
           {/* Logo */}
-          <Link
-            to="/"
-            style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}
-          >
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 8,
-                background: 'var(--color-dark)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+            <Link
+              to="/"
+              style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}
             >
-              <span
-                style={{
-                  fontFamily: 'var(--font-display)',
-                  fontSize: 11,
-                  fontWeight: 400,
-                  letterSpacing: '0.18em',
-                  color: '#fef9f0',
-                  fontFeatureSettings: '"ss09"',
-                }}
-              >
-                DA
-              </span>
-            </div>
-            <div>
-              <p
-                style={{
-                  fontFamily: 'var(--font-display)',
-                  fontSize: '1.125rem',
-                  fontWeight: 400,
-                  letterSpacing: '-0.11px',
-                  color: 'var(--color-dark)',
-                  lineHeight: 1.2,
-                  margin: 0,
-                }}
-              >
+              <img 
+                src={logoSrc} 
+                alt="DevArena" 
+                style={{ 
+                  height: 32, 
+                  width: 'auto',
+                  objectFit: 'contain'
+                }} 
+              />
+              <span style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '1.25rem',
+                fontWeight: 600,
+                color: 'var(--foreground)',
+                letterSpacing: '-0.02em'
+              }}>
                 DevArena
-              </p>
-              <p className="text-eyebrow" style={{ margin: 0, letterSpacing: '0.28em', fontSize: '0.6rem' }}>
-                Competition radar
-              </p>
-            </div>
-          </Link>
+              </span>
+            </Link>
+          </div>
 
-          {/* Desktop nav */}
+          {/* Desktop nav - Centered */}
           <nav
             className="hidden md:flex"
-            style={{ alignItems: 'center', gap: 4 }}
+            style={{ alignItems: 'center', gap: 4, flex: 'none' }}
             aria-label="Main navigation"
           >
             {navItems
@@ -113,11 +99,11 @@ export default function AppShell() {
                     fontSize: '0.8125rem',
                     fontWeight: 500,
                     padding: '5px 12px',
-                    borderRadius: 9999,
+                    borderRadius: 'var(--radius)',
                     textDecoration: 'none',
                     transition: 'background 150ms ease, color 150ms ease',
-                    background: isActive ? 'var(--color-dark)' : 'transparent',
-                    color: isActive ? '#fef9f0' : 'var(--text-secondary)',
+                    background: isActive ? 'var(--secondary)' : 'transparent',
+                    color: isActive ? 'var(--secondary-foreground)' : 'var(--muted-foreground)',
                   })}
                 >
                   {item.label}
@@ -126,7 +112,7 @@ export default function AppShell() {
           </nav>
 
           {/* Auth actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
             {isAuthenticated ? (
               <>
                 <div className="hidden sm:block" style={{ textAlign: 'right' }}>
@@ -135,7 +121,7 @@ export default function AppShell() {
                       fontFamily: 'var(--font-ui)',
                       fontSize: '0.8125rem',
                       fontWeight: 600,
-                      color: 'var(--color-dark)',
+                      color: 'var(--foreground)',
                       margin: 0,
                       lineHeight: 1.3,
                     }}
@@ -163,7 +149,7 @@ export default function AppShell() {
                     fontFamily: 'var(--font-ui)',
                     fontSize: '0.8125rem',
                     fontWeight: 500,
-                    color: 'var(--text-secondary)',
+                    color: 'var(--muted-foreground)',
                     padding: '5px 10px',
                     textDecoration: 'none',
                     transition: 'color 150ms ease',
@@ -202,8 +188,8 @@ export default function AppShell() {
         {mobileOpen && (
           <div
             style={{
-              borderTop: '1px solid var(--border-primary)',
-              background: 'rgba(242,241,237,0.97)',
+              borderTop: '1px solid var(--border)',
+              background: 'var(--background)',
               padding: '12px 24px 16px',
             }}
           >
@@ -222,10 +208,10 @@ export default function AppShell() {
                       fontSize: '0.9375rem',
                       fontWeight: 500,
                       padding: '10px 14px',
-                      borderRadius: 8,
+                      borderRadius: 'var(--radius)',
                       textDecoration: 'none',
-                      background: isActive ? 'var(--color-dark)' : 'transparent',
-                      color: isActive ? '#fef9f0' : 'var(--color-dark)',
+                      background: isActive ? 'var(--secondary)' : 'transparent',
+                      color: isActive ? 'var(--secondary-foreground)' : 'var(--foreground)',
                     })}
                   >
                     {item.label}

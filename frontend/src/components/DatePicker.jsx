@@ -145,11 +145,11 @@ export default function DatePicker({
   return (
     <div 
       style={{
-        background: 'var(--surface-200)',
-        border: '1px solid var(--border-primary)',
-        borderRadius: 8,
+        background: 'var(--popover)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius)',
         padding: 16,
-        boxShadow: 'var(--shadow-card)',
+        boxShadow: 'none',
       }}
     >
       {/* Header with month navigation */}
@@ -160,12 +160,12 @@ export default function DatePicker({
             padding: 8,
             background: 'transparent',
             border: 'none',
-            borderRadius: 6,
+            borderRadius: 'var(--radius)',
             cursor: 'pointer',
-            color: 'var(--text-secondary)',
+            color: 'var(--muted-foreground)',
             transition: 'background-color 150ms ease',
           }}
-          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-300)'}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent)'}
           onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
           aria-label="Previous month"
         >
@@ -174,7 +174,7 @@ export default function DatePicker({
           </svg>
         </button>
         <h3 style={{ 
-          color: 'var(--color-dark)', 
+          color: 'var(--foreground)', 
           fontFamily: 'var(--font-ui)', 
           fontSize: '0.9375rem',
           fontWeight: 500,
@@ -188,12 +188,12 @@ export default function DatePicker({
             padding: 8,
             background: 'transparent',
             border: 'none',
-            borderRadius: 6,
+            borderRadius: 'var(--radius)',
             cursor: 'pointer',
-            color: 'var(--text-secondary)',
+            color: 'var(--muted-foreground)',
             transition: 'background-color 150ms ease',
           }}
-          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-300)'}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent)'}
           onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
           aria-label="Next month"
         >
@@ -211,7 +211,7 @@ export default function DatePicker({
             style={{ 
               textAlign: 'center', 
               fontSize: '0.75rem', 
-              color: 'var(--text-secondary)', 
+              color: 'var(--muted-foreground)', 
               fontWeight: 500, 
               padding: '4px 0',
               fontFamily: 'var(--font-ui)',
@@ -245,7 +245,7 @@ export default function DatePicker({
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: '0.875rem',
-            borderRadius: 6,
+            borderRadius: 'var(--radius)',
             transition: 'all 150ms ease',
             border: 'none',
             fontFamily: 'var(--font-ui)',
@@ -253,25 +253,25 @@ export default function DatePicker({
           };
 
           if (isDisabled) {
-            buttonStyle.color = 'var(--text-tertiary)';
+            buttonStyle.color = 'var(--muted-foreground)';
             buttonStyle.background = 'transparent';
           } else if (isSelected) {
-            buttonStyle.background = 'var(--color-accent)';
-            buttonStyle.color = '#fff';
+            buttonStyle.background = 'var(--primary)';
+            buttonStyle.color = 'var(--primary-foreground)';
             buttonStyle.fontWeight = 500;
           } else if (inRange) {
-            buttonStyle.background = 'rgba(245,78,0,0.1)';
-            buttonStyle.color = 'var(--color-dark)';
+            buttonStyle.background = 'var(--muted)';
+            buttonStyle.color = 'var(--foreground)';
           } else if (inHoverRange) {
-            buttonStyle.background = 'rgba(245,78,0,0.05)';
-            buttonStyle.color = 'var(--color-dark)';
+            buttonStyle.background = 'var(--muted)';
+            buttonStyle.color = 'var(--foreground)';
           } else {
             buttonStyle.background = 'transparent';
-            buttonStyle.color = 'var(--color-dark)';
+            buttonStyle.color = 'var(--foreground)';
           }
 
           if (isToday && !isSelected) {
-            buttonStyle.border = '1px solid var(--color-accent)';
+            buttonStyle.border = '1px solid var(--primary)';
           }
 
           return (
@@ -281,7 +281,7 @@ export default function DatePicker({
               onMouseEnter={() => {
                 if (mode === 'range' && tempStartDate) setHoverDate(date);
                 if (!isDisabled && !isSelected && !inRange && !inHoverRange) {
-                  event.currentTarget.style.background = 'var(--surface-300)';
+                  event.currentTarget.style.background = 'var(--accent)';
                 }
               }}
               onMouseLeave={() => {
@@ -305,7 +305,7 @@ export default function DatePicker({
         flexWrap: 'wrap', 
         gap: 8, 
         paddingTop: 12, 
-        borderTop: '1px solid var(--border-primary)' 
+        borderTop: '1px solid var(--border)' 
       }}>
         <button
           onClick={() => handleQuickSelect('today')}
@@ -337,16 +337,16 @@ export default function DatePicker({
           style={{
             padding: '4px 12px',
             fontSize: '0.875rem',
-            color: 'var(--color-error)',
+            color: 'var(--destructive)',
             background: 'transparent',
-            border: '1px solid rgba(207,45,86,0.2)',
-            borderRadius: 6,
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)',
             cursor: 'pointer',
             transition: 'background-color 150ms ease',
             fontFamily: 'var(--font-ui)',
             fontWeight: 500,
           }}
-          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(207,45,86,0.05)'}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--muted)'}
           onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
         >
           Clear
