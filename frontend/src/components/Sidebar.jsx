@@ -114,7 +114,7 @@ export default function Sidebar() {
           <span style={{
             fontFamily: 'var(--font-display)',
             fontSize: '1.125rem',
-            fontWeight: 600,
+            fontWeight: 400,
             color: 'var(--foreground)',
             letterSpacing: '-0.02em'
           }}>

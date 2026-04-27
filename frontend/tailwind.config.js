@@ -55,9 +55,9 @@ export default {
         sm: `calc(var(--radius) - 4px)`
       },
       fontFamily: {
-        sans: ['"Geist Mono"', 'monospace'],
-        mono: ['"Geist Mono"', 'monospace'],
-        serif: ['"Geist Mono"', 'monospace']
+        sans: ['"Fira Code"', 'monospace'],
+        mono: ['"Fira Code"', 'monospace'],
+        serif: ['"Fira Code"', 'monospace']
       }
     }
   },

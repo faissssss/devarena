@@ -1,6 +1,21 @@
 # DevArena Platform
 
-> Your central hub for discovering developer competitions, hackathons, coding contests, and AI/data science challenges from across the web.
+<div align="center">
+  <img src="frontend/src/assets/banner/dev-arena-banner.png" alt="DevArena Banner" width="100%">
+  
+  <p align="center">
+    <strong>Your central hub for discovering developer competitions, hackathons, coding contests, and AI/data science challenges from across the web.</strong>
+  </p>
+  
+  <p align="center">
+    <a href="https://devarena.vercel.app" target="_blank">🚀 Live Demo</a> •
+    <a href="#-quick-start">Quick Start</a> •
+    <a href="#-features">Features</a> •
+    <a href="#-tech-stack">Tech Stack</a>
+  </p>
+</div>
+
+---
 
 ## 🎯 What is DevArena?
 

@@ -111,7 +111,7 @@ export default function AppShell() {
               <span style={{
                 fontFamily: 'var(--font-display)',
                 fontSize: '1.25rem',
-                fontWeight: 600,
+                fontWeight: 400,
                 color: 'var(--foreground)',
                 letterSpacing: '-0.02em'
               }}>
