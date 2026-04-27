@@ -431,6 +431,7 @@ export default function LandingPage() {
                   objectFit: 'contain',
                   display: 'block',
                   flexShrink: 0,
+                  filter: 'brightness(0) invert(1)',
                 }}
               />
               <span style={{ 

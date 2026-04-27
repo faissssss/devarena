@@ -10,6 +10,19 @@ import {
 
 const router = Router();
 
+function buildEmptyCompetitionResponse(filters = {}) {
+  const page = Math.max(1, Number(filters.page) || 1);
+  const limit = Math.max(1, Math.min(Number(filters.limit) || 12, 100));
+
+  return {
+    competitions: [],
+    totalCount: 0,
+    totalPages: 1,
+    page,
+    limit,
+  };
+}
+
 router.get('/', async (req, res, next) => {
   try {
     // Parse platforms parameter from comma-separated string to array
@@ -18,21 +31,23 @@ router.get('/', async (req, res, next) => {
       filters.platforms = filters.platforms.split(',').map(p => p.trim()).filter(Boolean);
     }
     
-    let result;
-
     try {
-      result = await executeFilter(filters);
+      const result = await executeFilter(filters);
+      return res.json(result);
     } catch (dbError) {
-      result = await listLiveCompetitions(filters);
+      try {
+        const liveResult = await listLiveCompetitions(filters);
+        return res.json(liveResult);
+      } catch (liveError) {
+        console.error('Competition list fallback failed', {
+          dbError: dbError.message,
+          liveError: liveError.message,
+        });
+        return res.json(buildEmptyCompetitionResponse(filters));
+      }
     }
-
-    if (!result.competitions?.length) {
-      result = await listLiveCompetitions(filters);
-    }
-
-    res.json(result);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 

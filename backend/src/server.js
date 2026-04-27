@@ -116,7 +116,7 @@ export function createApp() {
     }
   }
 
-  apiRouter.use('/auth', requireDatabase, authRoutes);
+  apiRouter.use('/auth', authRoutes);
   apiRouter.use('/competitions', competitionRoutes);
   apiRouter.use('/bookmarks', requireDatabase, bookmarkRoutes);
   apiRouter.use('/admin', requireDatabase, adminRoutes);

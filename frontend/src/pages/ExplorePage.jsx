@@ -221,6 +221,15 @@ export default function ExplorePage() {
   useEffect(() => {
     let cancelled = false;
 
+    async function safeCompetitionList(params) {
+      try {
+        return await competitionApi.list(params);
+      } catch (error) {
+        console.error('Competition list request failed', { params, error });
+        return { competitions: [], totalPages: 1, page: params?.page ?? 1, limit: params?.limit ?? 9 };
+      }
+    }
+
     async function load() {
       setLoading(true);
       setError('');
@@ -229,17 +238,12 @@ export default function ExplorePage() {
         let compRes;
 
         if (filters.featured) {
-          const ongoingRes = await competitionApi.list({ status: 'ongoing', limit: 50 });
+          const [ongoingRes, upcomingRes] = await Promise.all([
+            safeCompetitionList({ status: 'ongoing', limit: 50 }),
+            safeCompetitionList({ status: 'upcoming', limit: 50 }),
+          ]);
           const ongoingComps = ongoingRes.competitions || [];
-          let featuredComps = [...ongoingComps];
-
-          if (featuredComps.length < 50) {
-            const upcomingRes = await competitionApi.list({
-              status: 'upcoming',
-              limit: 50 - featuredComps.length,
-            });
-            featuredComps = [...featuredComps, ...(upcomingRes.competitions || [])];
-          }
+          const featuredComps = [...ongoingComps, ...(upcomingRes.competitions || [])].slice(0, 50);
 
           const startIdx = (filters.page - 1) * filters.limit;
           const endIdx = startIdx + filters.limit;
@@ -250,7 +254,7 @@ export default function ExplorePage() {
             page: filters.page,
           };
         } else {
-          compRes = await competitionApi.list(filters);
+          compRes = await safeCompetitionList(filters);
         }
 
         const bmRes = isAuthenticated ? await bookmarkApi.list() : { bookmarks: [] };

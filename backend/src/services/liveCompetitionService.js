@@ -5,7 +5,7 @@ import { parseCLISTResponse, parseKontestsResponse } from '../parsers/apiRespons
 import { updateCompetitionStatus } from './competitionService.js';
 
 function getTimeout() {
-  return Number(process.env.SYNC_TIMEOUT || 30000);
+  return Math.min(Number(process.env.SYNC_TIMEOUT || 30000), 5000);
 }
 
 function buildClistRequestConfig() {

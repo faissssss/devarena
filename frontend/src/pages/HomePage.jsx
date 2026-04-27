@@ -17,32 +17,31 @@ export default function HomePage() {
 
   useEffect(() => {
     let cancelled = false;
+
+    async function safeCompetitionList(params) {
+      try {
+        return await competitionApi.list(params);
+      } catch (error) {
+        console.error('Competition list request failed', { params, error });
+        return { competitions: [], totalPages: 1, page: 1, limit: params?.limit ?? 10 };
+      }
+    }
+
     async function load() {
       setLoading(true);
       setError('');
       try {
-        // Featured: Ongoing + Upcoming competitions (5-10 max)
-        // First get ongoing, then upcoming to fill up to 10
-        const ongoingRes = await competitionApi.list({ status: 'ongoing', limit: 10 });
+        const [ongoingRes, upcomingRes, newestRes, allRes] = await Promise.all([
+          safeCompetitionList({ status: 'ongoing', limit: 10 }),
+          safeCompetitionList({ status: 'upcoming', limit: 10 }),
+          safeCompetitionList({ limit: 10, page: 1 }),
+          safeCompetitionList({ limit: 50 }),
+        ]);
+
         const ongoingComps = ongoingRes.competitions || [];
-        
-        let featuredComps = [...ongoingComps];
-        
-        // If we have less than 10, add upcoming competitions
-        if (featuredComps.length < 10) {
-          const upcomingRes = await competitionApi.list({ 
-            status: 'upcoming', 
-            limit: 10 - featuredComps.length 
-          });
-          featuredComps = [...featuredComps, ...(upcomingRes.competitions || [])];
-        }
-        
-        // Newest: Recently launched competitions (sorted by start_date DESC, limit 10)
-        const newestRes = await competitionApi.list({ limit: 10, page: 1 });
-        
-        // Popular: Competitions with prizes (proxy for "famous"), any status, limit 10
-        // We'll fetch competitions and sort by prize amount (competitions with prizes are typically more popular)
-        const allRes = await competitionApi.list({ limit: 50 });
+        const upcomingComps = upcomingRes.competitions || [];
+        const featuredComps = [...ongoingComps, ...upcomingComps].slice(0, 10);
+
         const withPrizes = (allRes.competitions || [])
           .filter(comp => comp.prize && comp.prize.trim() !== '')
           .slice(0, 10);
@@ -54,7 +53,12 @@ export default function HomePage() {
         setPopular(withPrizes);
         
         if (isAuthenticated) {
-          const bmRes = await bookmarkApi.list();
+          let bmRes = { bookmarks: [] };
+          try {
+            bmRes = await bookmarkApi.list();
+          } catch (bookmarkError) {
+            console.error('Bookmark list request failed', bookmarkError);
+          }
           if (!cancelled) {
             setBookmarks(
               Object.fromEntries((bmRes.bookmarks || []).map((b) => [b.competition_id, b.id]))

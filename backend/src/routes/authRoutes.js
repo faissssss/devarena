@@ -11,6 +11,7 @@ import {
   register,
 } from '../services/authService.js';
 import { authLimiter } from '../middleware/security.js';
+import { warmupConnection } from '../utils/db.js';
 
 const router = Router();
 
@@ -62,8 +63,27 @@ function getRequestOrigin(req) {
   return `${proto}://${host}`;
 }
 
+function isLocalhostHost(host) {
+  const normalizedHost = String(host || '').trim().toLowerCase();
+  return normalizedHost.startsWith('localhost') || normalizedHost.startsWith('127.0.0.1');
+}
+
 function getAppUrl(req) {
-  return normalizeBaseUrl(getRequestOrigin(req) || process.env.APP_URL || process.env.CORS_ORIGIN || 'http://localhost:5173');
+  const requestHost = getForwardedHost(req);
+  const configuredAppUrl = normalizeBaseUrl(
+    process.env.APP_URL || process.env.CORS_ORIGIN || 'http://localhost:5173'
+  );
+  const requestOrigin = normalizeBaseUrl(getRequestOrigin(req));
+
+  if (requestOrigin && !isLocalhostHost(requestHost)) {
+    return requestOrigin;
+  }
+
+  if (configuredAppUrl) {
+    return configuredAppUrl;
+  }
+
+  return requestOrigin || 'http://localhost:5173';
 }
 
 function getApiUrl(req) {
@@ -109,6 +129,21 @@ function parseCookies(req) {
         return [key, decodeURIComponent(value)];
       })
   );
+}
+
+async function requireAuthDatabase(_req, res, next) {
+  try {
+    await warmupConnection();
+    return next();
+  } catch (error) {
+    return res.status(503).json({
+      error: {
+        code: 'DATABASE_UNAVAILABLE',
+        message:
+          'The database is not reachable right now. Please verify DATABASE_URL and try again.',
+      },
+    });
+  }
 }
 
 function buildProviderAuthUrl(provider, req, state) {
@@ -227,6 +262,7 @@ async function handleOAuthCallback(req, res, provider) {
 
 router.post(
   '/register',
+  requireAuthDatabase,
   authLimiter, // Apply stricter rate limiting
   [
     body('username').trim().isLength({ min: 3 }),
@@ -254,6 +290,7 @@ router.post(
 
 router.post(
   '/login',
+  requireAuthDatabase,
   authLimiter, // Apply stricter rate limiting
   [body('email').isEmail(), body('password').isLength({ min: 1 })],
   async (req, res, next) => {
@@ -302,11 +339,11 @@ router.get('/oauth/:provider', async (req, res) => {
 });
 
 router.get('/oauth/google/callback', async (req, res) => {
-  return handleOAuthCallback(req, res, 'google');
+  return requireAuthDatabase(req, res, () => handleOAuthCallback(req, res, 'google'));
 });
 
 router.get('/oauth/github/callback', async (req, res) => {
-  return handleOAuthCallback(req, res, 'github');
+  return requireAuthDatabase(req, res, () => handleOAuthCallback(req, res, 'github'));
 });
 
 export default router;

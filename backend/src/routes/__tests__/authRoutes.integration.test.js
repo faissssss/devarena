@@ -7,6 +7,7 @@ const mockExchangeGoogleCode = jest.fn();
 const mockLogin = jest.fn();
 const mockLoginWithOAuth = jest.fn();
 const mockRegister = jest.fn();
+const mockWarmupConnection = jest.fn();
 
 jest.unstable_mockModule('../../services/authService.js', () => {
   class MockAuthServiceError extends Error {
@@ -28,6 +29,10 @@ jest.unstable_mockModule('../../services/authService.js', () => {
   };
 });
 
+jest.unstable_mockModule('../../utils/db.js', () => ({
+  warmupConnection: mockWarmupConnection,
+}));
+
 describe('auth routes integration', () => {
   let authRoutes;
   let app;
@@ -38,6 +43,9 @@ describe('auth routes integration', () => {
     process.env.NODE_ENV = 'test';
     process.env.GOOGLE_CLIENT_ID = 'google-client-id';
     process.env.GITHUB_CLIENT_ID = 'github-client-id';
+    process.env.APP_URL = 'http://localhost:5173';
+    process.env.API_URL = 'http://localhost:3000';
+    mockWarmupConnection.mockResolvedValue();
 
     authRoutes = (await import('../authRoutes.js')).default;
 
@@ -79,6 +87,30 @@ describe('auth routes integration', () => {
     expect(response.headers['set-cookie'][0]).toContain('Secure');
   });
 
+  test('GET /auth/oauth/google uses frontend APP_URL for local callback redirects', async () => {
+    mockExchangeGoogleCode.mockResolvedValueOnce({
+      provider: 'google',
+      providerUserId: 'google-1',
+      email: 'user@example.com',
+      username: 'google-user',
+      avatarUrl: null,
+    });
+    mockLoginWithOAuth.mockResolvedValueOnce({
+      token: 'oauth-token',
+      user: { id: 'user-3', email: 'user@example.com', role: 'user' },
+    });
+
+    const response = await request(app)
+      .get('/auth/oauth/google/callback?code=test-code&state=state-123')
+      .set('Host', 'localhost:3000')
+      .set('Cookie', 'devarena_oauth_state_google=state-123%7C%2Fhome');
+
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe(
+      'http://localhost:5173/auth/callback?token=oauth-token&next=%2Fhome'
+    );
+  });
+
   test('GET /api/auth/oauth/github/callback redirects back to frontend callback on same vercel origin', async () => {
     mockExchangeGithubCode.mockResolvedValueOnce({
       provider: 'github',
@@ -107,5 +139,13 @@ describe('auth routes integration', () => {
       'https://preview-app.vercel.app/auth/callback?token=oauth-token&next=%2Fdashboard'
     );
     expect(response.headers['set-cookie'][0]).toContain('devarena_oauth_state_github=');
+  });
+
+  test('GET /auth/oauth/google does not require database warmup before redirecting to provider', async () => {
+    const response = await request(app).get('/auth/oauth/google?next=/home');
+
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toContain('https://accounts.google.com/o/oauth2/v2/auth?');
+    expect(mockWarmupConnection).not.toHaveBeenCalled();
   });
 });
