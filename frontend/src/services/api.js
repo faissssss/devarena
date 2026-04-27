@@ -51,14 +51,52 @@ function unwrapError(error, fallbackMessage) {
   return error.response?.data?.error?.message || error.message || fallbackMessage;
 }
 
+function ensureObjectResponse(data, fallbackMessage) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error(fallbackMessage);
+  }
+
+  return data;
+}
+
+function ensureCompetitionListResponse(data) {
+  const parsed = ensureObjectResponse(data, 'Invalid competitions response from server');
+
+  if (!Array.isArray(parsed.competitions)) {
+    throw new Error('Invalid competitions response from server');
+  }
+
+  return parsed;
+}
+
+function ensurePlatformsResponse(data) {
+  const parsed = ensureObjectResponse(data, 'Invalid platforms response from server');
+
+  if (!Array.isArray(parsed.platforms)) {
+    throw new Error('Invalid platforms response from server');
+  }
+
+  return parsed;
+}
+
+function ensureBookmarksResponse(data) {
+  const parsed = ensureObjectResponse(data, 'Invalid bookmarks response from server');
+
+  if (!Array.isArray(parsed.bookmarks)) {
+    throw new Error('Invalid bookmarks response from server');
+  }
+
+  return parsed;
+}
+
 export const authApi = {
   async login(payload) {
     const response = await api.post('/auth/login', payload);
-    return response.data;
+    return ensureObjectResponse(response.data, 'Invalid login response from server');
   },
   async register(payload) {
     const response = await api.post('/auth/register', payload);
-    return response.data;
+    return ensureObjectResponse(response.data, 'Invalid registration response from server');
   },
   getOAuthUrl(provider, nextPath = '/home') {
     const params = new URLSearchParams({ next: nextPath });
@@ -87,63 +125,63 @@ export const competitionApi = {
     }
     
     const response = await api.get('/competitions', { params: queryParams });
-    return response.data;
+    return ensureCompetitionListResponse(response.data);
   },
   async getById(id) {
     const response = await api.get(`/competitions/${id}`);
-    return response.data;
+    return ensureObjectResponse(response.data, 'Invalid competition detail response from server');
   },
   async getPlatforms() {
     const response = await api.get('/competitions/platforms');
-    return response.data;
+    return ensurePlatformsResponse(response.data);
   },
 };
 
 export const bookmarkApi = {
   async list() {
     const response = await api.get('/bookmarks');
-    return response.data;
+    return ensureBookmarksResponse(response.data);
   },
   async create(competitionId) {
     const response = await api.post('/bookmarks', { competition_id: competitionId });
-    return response.data;
+    return ensureObjectResponse(response.data, 'Invalid bookmark response from server');
   },
   async remove(bookmarkId) {
     await api.delete(`/bookmarks/${bookmarkId}`);
   },
   async findByCompetition(competitionId) {
     const response = await api.get(`/bookmarks/competition/${competitionId}`);
-    return response.data;
+    return ensureObjectResponse(response.data, 'Invalid bookmark lookup response from server');
   },
 };
 
 export const userApi = {
   async getMe() {
     const response = await api.get('/users/me');
-    return response.data;
+    return ensureObjectResponse(response.data, 'Invalid user response from server');
   },
   async updateMe(payload) {
     const response = await api.put('/users/me', payload);
-    return response.data;
+    return ensureObjectResponse(response.data, 'Invalid profile update response from server');
   },
 };
 
 export const adminApi = {
   async sync() {
     const response = await api.post('/admin/sync');
-    return response.data;
+    return ensureObjectResponse(response.data, 'Invalid sync response from server');
   },
   async getSyncLogs(params) {
     const response = await api.get('/admin/sync-logs', { params });
-    return response.data;
+    return ensureObjectResponse(response.data, 'Invalid sync logs response from server');
   },
   async getStats(params) {
     const response = await api.get('/admin/stats', { params });
-    return response.data;
+    return ensureObjectResponse(response.data, 'Invalid admin stats response from server');
   },
   async updateCompetition(id, payload) {
     const response = await api.put(`/admin/competitions/${id}`, payload);
-    return response.data;
+    return ensureObjectResponse(response.data, 'Invalid competition update response from server');
   },
   async deleteCompetition(id) {
     await api.delete(`/admin/competitions/${id}`);
