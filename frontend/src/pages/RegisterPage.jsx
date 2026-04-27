@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import SocialAuthButtons from '../components/SocialAuthButtons';
 import { useAuth } from '../context/AuthContext';
@@ -7,6 +7,15 @@ import { useAuth } from '../context/AuthContext';
 export default function RegisterPage() {
   const { register, login, continueWithProvider, loading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTarget = (() => {
+    const queryTarget = new URLSearchParams(location.search).get('from');
+    if (typeof queryTarget === 'string' && queryTarget.startsWith('/') && !queryTarget.startsWith('//')) {
+      return queryTarget;
+    }
+
+    return '/home';
+  })();
   const [form, setForm] = useState({ username: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -15,10 +24,10 @@ export default function RegisterPage() {
   // Redirect when authentication is complete (only after form submission)
   useEffect(() => {
     if (isAuthenticated && isSubmitting) {
-      console.log('[RegisterPage] User authenticated, navigating to home');
-      navigate('/home', { replace: true });
+      console.log('[RegisterPage] User authenticated, navigating to:', redirectTarget);
+      navigate(redirectTarget, { replace: true });
     }
-  }, [isAuthenticated, isSubmitting, navigate]);
+  }, [isAuthenticated, isSubmitting, navigate, redirectTarget]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -35,7 +44,7 @@ export default function RegisterPage() {
   }
 
   async function handleProvider(provider) {
-    continueWithProvider(provider, '/home');
+    continueWithProvider(provider, redirectTarget);
   }
 
   const labelStyle = {

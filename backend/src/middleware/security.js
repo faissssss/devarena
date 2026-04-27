@@ -39,7 +39,7 @@ export const apiLimiter = rateLimit({
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   // Skip rate limiting for health checks
-  skip: (req) => req.path === '/api/health'
+  skip: (req) => req.path === '/api/health' || req.path === '/health'
 });
 
 /**

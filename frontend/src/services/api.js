@@ -39,7 +39,8 @@ api.interceptors.response.use(
       // Only redirect if not already on login/register pages
       const currentPath = window.location.pathname;
       if (!currentPath.startsWith('/login') && !currentPath.startsWith('/register') && !currentPath.startsWith('/auth/callback')) {
-        window.location.href = `/login?from=${encodeURIComponent(currentPath)}`;
+        const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+        window.location.href = `/login?from=${encodeURIComponent(returnTo)}`;
       }
     }
 

@@ -421,19 +421,18 @@ export default function LandingPage() {
             onMouseEnter={(e) => e.currentTarget.style.opacity = 1}
             onMouseLeave={(e) => e.currentTarget.style.opacity = 0.6}
             >
-              <div style={{
-                width: 32,
-                height: 32,
-                backgroundColor: 'currentColor',
-                WebkitMaskImage: `url(${b.logoUrl})`,
-                maskImage: `url(${b.logoUrl})`,
-                WebkitMaskSize: 'contain',
-                maskSize: 'contain',
-                WebkitMaskRepeat: 'no-repeat',
-                maskRepeat: 'no-repeat',
-                WebkitMaskPosition: 'center',
-                maskPosition: 'center'
-              }} />
+              <img
+                src={b.logoUrl}
+                alt={`${b.name} logo`}
+                loading="lazy"
+                style={{
+                  width: 32,
+                  height: 32,
+                  objectFit: 'contain',
+                  display: 'block',
+                  flexShrink: 0,
+                }}
+              />
               <span style={{ 
                 fontFamily: 'var(--font-display)', 
                 fontSize: '0.875rem', 

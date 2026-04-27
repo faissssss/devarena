@@ -16,11 +16,23 @@ export default function AuthCallbackPage() {
       const token = searchParams.get('token');
       const nextPath = searchParams.get('next') || '/home';
       const error = searchParams.get('error');
+      const loginRedirect = `/login?from=${encodeURIComponent(nextPath)}`;
+
+      function sendToLogin(message) {
+        setTimeout(
+          () =>
+            navigate(loginRedirect, {
+              replace: true,
+              state: { oauthError: message },
+            }),
+          1200
+        );
+      }
 
       if (error) {
         if (active) {
           setMessage(error);
-          setTimeout(() => navigate('/login', { replace: true, state: { oauthError: error } }), 1200);
+          sendToLogin(error);
         }
         return;
       }
@@ -28,7 +40,7 @@ export default function AuthCallbackPage() {
       if (!token) {
         if (active) {
           setMessage('Missing OAuth token. Please try again.');
-          setTimeout(() => navigate('/login', { replace: true }), 1200);
+          sendToLogin('Missing OAuth token. Please try again.');
         }
         return;
       }
@@ -67,17 +79,11 @@ export default function AuthCallbackPage() {
           if (isNetworkError) {
             // Display user-friendly network error message
             setMessage('Network error. Please check your connection and try again.');
-            setTimeout(
-              () => navigate('/login', { replace: true, state: { oauthError: 'Network error. Please check your connection and try again.' } }),
-              1200
-            );
+            sendToLogin('Network error. Please check your connection and try again.');
           } else {
             // Display generic OAuth error message
             setMessage(authError.message);
-            setTimeout(
-              () => navigate('/login', { replace: true, state: { oauthError: authError.message } }),
-              1200
-            );
+            sendToLogin(authError.message);
           }
         }
       }

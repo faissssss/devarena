@@ -30,16 +30,44 @@ function handleValidation(req, res) {
   return true;
 }
 
-function getAppUrl() {
-  return process.env.APP_URL || process.env.CORS_ORIGIN || 'http://localhost:5173';
+function normalizeBaseUrl(value) {
+  return String(value || '').trim().replace(/\/+$/, '');
+}
+
+function getForwardedHost(req) {
+  const forwardedHost = req.get('x-forwarded-host');
+  if (forwardedHost) {
+    return forwardedHost.split(',')[0].trim();
+  }
+
+  return req.get('host');
+}
+
+function getForwardedProto(req) {
+  const forwardedProto = req.get('x-forwarded-proto');
+  if (forwardedProto) {
+    return forwardedProto.split(',')[0].trim();
+  }
+
+  return req.protocol;
+}
+
+function getRequestOrigin(req) {
+  const host = getForwardedHost(req);
+  if (!host) {
+    return null;
+  }
+
+  const proto = getForwardedProto(req) || 'https';
+  return `${proto}://${host}`;
+}
+
+function getAppUrl(req) {
+  return normalizeBaseUrl(getRequestOrigin(req) || process.env.APP_URL || process.env.CORS_ORIGIN || 'http://localhost:5173');
 }
 
 function getApiUrl(req) {
-  if (process.env.API_URL) {
-    return process.env.API_URL;
-  }
-
-  return `${req.protocol}://${req.get('host')}`;
+  return normalizeBaseUrl(getRequestOrigin(req) || process.env.API_URL || process.env.APP_URL || 'http://localhost:3000');
 }
 
 function getRedirectUri(req, provider) {
@@ -58,12 +86,14 @@ function getSafeNext(nextPath) {
   return nextPath;
 }
 
-function serializeCookie(name, value, maxAgeSeconds = 1200) {
-  return `${name}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSeconds}`;
+function serializeCookie(req, name, value, maxAgeSeconds = 1200) {
+  const isSecure = getForwardedProto(req) === 'https' || process.env.VERCEL === '1';
+  return `${name}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSeconds}${isSecure ? '; Secure' : ''}`;
 }
 
-function clearCookie(name) {
-  return `${name}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+function clearCookie(req, name) {
+  const isSecure = getForwardedProto(req) === 'https' || process.env.VERCEL === '1';
+  return `${name}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${isSecure ? '; Secure' : ''}`;
 }
 
 function parseCookies(req) {
@@ -120,18 +150,18 @@ async function handleOAuthCallback(req, res, provider) {
   const cookies = parseCookies(req);
   const cookieValue = cookies[cookieName];
 
-  res.setHeader('Set-Cookie', clearCookie(cookieName));
+  res.setHeader('Set-Cookie', clearCookie(req, cookieName));
 
   if (!code || !state || !cookieValue) {
     return res.redirect(
-      `${getAppUrl()}/auth/callback?error=${encodeURIComponent('OAuth session expired. Please try again.')}`
+      `${getAppUrl(req)}/auth/callback?error=${encodeURIComponent('OAuth session expired. Please try again.')}`
     );
   }
 
   const [expectedState, nextPath] = cookieValue.split('|');
   if (String(state) !== expectedState) {
     return res.redirect(
-      `${getAppUrl()}/auth/callback?error=${encodeURIComponent('OAuth state mismatch. Please try again.')}`
+      `${getAppUrl(req)}/auth/callback?error=${encodeURIComponent('OAuth state mismatch. Please try again.')}`
     );
   }
 
@@ -146,7 +176,7 @@ async function handleOAuthCallback(req, res, provider) {
       next: getSafeNext(nextPath),
     });
 
-    return res.redirect(`${getAppUrl()}/auth/callback?${redirectParams.toString()}`);
+    return res.redirect(`${getAppUrl(req)}/auth/callback?${redirectParams.toString()}`);
   } catch (error) {
     // Log detailed error information for debugging
     console.error(`OAuth callback error for ${provider}:`, {
@@ -190,7 +220,7 @@ async function handleOAuthCallback(req, res, provider) {
     }
 
     return res.redirect(
-      `${getAppUrl()}/auth/callback?error=${encodeURIComponent(message)}`
+      `${getAppUrl(req)}/auth/callback?error=${encodeURIComponent(message)}`
     );
   }
 }
@@ -258,7 +288,7 @@ router.get('/oauth/:provider', async (req, res) => {
     const nextPath = getSafeNext(req.query.next);
     const cookieName = `devarena_oauth_state_${provider}`;
 
-    res.setHeader('Set-Cookie', serializeCookie(cookieName, `${state}|${nextPath}`));
+    res.setHeader('Set-Cookie', serializeCookie(req, cookieName, `${state}|${nextPath}`));
     return res.redirect(buildProviderAuthUrl(provider, req, state));
   } catch (error) {
     const message = error instanceof AuthServiceError
@@ -266,7 +296,7 @@ router.get('/oauth/:provider', async (req, res) => {
       : `Unable to start ${provider} sign-in`;
 
     return res.redirect(
-      `${getAppUrl()}/auth/callback?error=${encodeURIComponent(message)}`
+      `${getAppUrl(req)}/auth/callback?error=${encodeURIComponent(message)}`
     );
   }
 });

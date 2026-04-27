@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import { Router } from 'express';
 
 import adminRoutes from './routes/adminRoutes.js';
 import authRoutes from './routes/authRoutes.js';
@@ -30,6 +31,7 @@ const isDirectExecution =
 
 export function createApp() {
   const app = express();
+  app.set('trust proxy', 1);
 
   if (isDatabaseConfigured()) {
     warmupConnection().catch((error) => {
@@ -43,10 +45,39 @@ export function createApp() {
   app.use(helmetConfig);
 
   // CORS configuration
-  app.use(cors({ 
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
-    credentials: true // Allow cookies to be sent
-  }));
+  const allowedOrigins = new Set(
+    [
+      process.env.CORS_ORIGIN,
+      process.env.APP_URL,
+      process.env.API_URL,
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+    ].filter(Boolean)
+  );
+
+  app.use(
+    cors({
+      origin(origin, callback) {
+        if (!origin) {
+          callback(null, true);
+          return;
+        }
+
+        if (allowedOrigins.has(origin)) {
+          callback(null, true);
+          return;
+        }
+
+        if (/^https:\/\/.*\.vercel\.app$/i.test(origin)) {
+          callback(null, true);
+          return;
+        }
+
+        callback(new Error('Origin not allowed by CORS'));
+      },
+      credentials: true,
+    })
+  );
 
   // Body parsing middleware
   app.use(express.json());
@@ -56,11 +87,10 @@ export function createApp() {
   // CSRF protection
   app.use(ensureCsrfToken);
 
-  // Rate limiting for all API routes
-  app.use('/api/', apiLimiter);
+  const apiRouter = Router();
 
   // Health check endpoint (no rate limiting)
-  app.get('/api/health', async (req, res) => {
+  apiRouter.get('/health', async (req, res) => {
     logger.info('Health check requested');
     const db = await getDatabaseStatus();
     res.status(db.connected || !db.configured ? 200 : 503).json({
@@ -86,14 +116,20 @@ export function createApp() {
     }
   }
 
-  app.use('/api/auth', requireDatabase, authRoutes);
-  app.use('/api/competitions', competitionRoutes);
-  app.use('/api/bookmarks', requireDatabase, bookmarkRoutes);
-  app.use('/api/admin', requireDatabase, adminRoutes);
-  app.use('/api/users', requireDatabase, userRoutes);
+  apiRouter.use('/auth', requireDatabase, authRoutes);
+  apiRouter.use('/competitions', competitionRoutes);
+  apiRouter.use('/bookmarks', requireDatabase, bookmarkRoutes);
+  apiRouter.use('/admin', requireDatabase, adminRoutes);
+  apiRouter.use('/users', requireDatabase, userRoutes);
+
+  // Rate limiting for all API routes
+  app.use('/api', apiLimiter, apiRouter);
+  if (process.env.VERCEL) {
+    app.use('/', apiLimiter, apiRouter);
+  }
 
   // Serve static frontend files in production
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'production' && !process.env.VERCEL) {
     const frontendDistPath = path.join(__dirname, '../../frontend/dist');
     app.use(express.static(frontendDistPath));
     
@@ -101,14 +137,13 @@ export function createApp() {
     app.get('*', (req, res) => {
       res.sendFile(path.join(frontendDistPath, 'index.html'));
     });
-  } else {
-    // In development, return 404 for non-API routes
-    app.use((req, res) => {
-      res.status(404).json({
-        error: { code: 'NOT_FOUND', message: 'Route not found' },
-      });
-    });
   }
+
+  app.use((req, res) => {
+    res.status(404).json({
+      error: { code: 'NOT_FOUND', message: 'Route not found' },
+    });
+  });
 
   app.use((err, req, res, _next) => {
     // Log error with Winston

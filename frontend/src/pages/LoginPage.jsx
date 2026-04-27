@@ -8,6 +8,19 @@ export default function LoginPage() {
   const { login, continueWithProvider, loading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const redirectTarget = (() => {
+    const queryTarget = new URLSearchParams(location.search).get('from');
+    if (typeof queryTarget === 'string' && queryTarget.startsWith('/') && !queryTarget.startsWith('//')) {
+      return queryTarget;
+    }
+
+    const stateTarget = location.state?.from?.pathname;
+    if (typeof stateTarget === 'string' && stateTarget.startsWith('/') && !stateTarget.startsWith('//')) {
+      return stateTarget;
+    }
+
+    return '/home';
+  })();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState(location.state?.oauthError || '');
   const [showPassword, setShowPassword] = useState(false);
@@ -16,11 +29,10 @@ export default function LoginPage() {
   // Redirect when authentication is complete (only after form submission)
   useEffect(() => {
     if (isAuthenticated && isSubmitting) {
-      const targetPath = location.state?.from?.pathname || '/home';
-      console.log('[LoginPage] User authenticated, navigating to:', targetPath);
-      navigate(targetPath, { replace: true });
+      console.log('[LoginPage] User authenticated, navigating to:', redirectTarget);
+      navigate(redirectTarget, { replace: true });
     }
-  }, [isAuthenticated, isSubmitting, navigate, location.state?.from?.pathname]);
+  }, [isAuthenticated, isSubmitting, navigate, redirectTarget]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -36,7 +48,7 @@ export default function LoginPage() {
   }
 
   async function handleProvider(provider) {
-    continueWithProvider(provider, location.state?.from?.pathname || '/home');
+    continueWithProvider(provider, redirectTarget);
   }
 
   return (
