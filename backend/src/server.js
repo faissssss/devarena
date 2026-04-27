@@ -13,6 +13,11 @@ import userRoutes from './routes/userRoutes.js';
 import { ensureCsrfToken } from './middleware/csrf.js';
 import { helmetConfig, apiLimiter } from './middleware/security.js';
 import logger from './utils/logger.js';
+import {
+  getDatabaseStatus,
+  isDatabaseConfigured,
+  warmupConnection,
+} from './utils/db.js';
 import { startScheduler } from './scheduler.js';
 
 dotenv.config();
@@ -25,6 +30,14 @@ const isDirectExecution =
 
 export function createApp() {
   const app = express();
+
+  if (isDatabaseConfigured()) {
+    warmupConnection().catch((error) => {
+      logger.error(`Database warmup failed: ${error.message}`);
+    });
+  } else {
+    logger.warn('DATABASE_URL is not configured; DB-backed routes will return 503');
+  }
 
   // Security middleware - Helmet.js for security headers
   app.use(helmetConfig);
@@ -47,16 +60,37 @@ export function createApp() {
   app.use('/api/', apiLimiter);
 
   // Health check endpoint (no rate limiting)
-  app.get('/api/health', (req, res) => {
+  app.get('/api/health', async (req, res) => {
     logger.info('Health check requested');
-    res.json({ status: 'ok', message: 'DevArena API is running' });
+    const db = await getDatabaseStatus();
+    res.status(db.connected || !db.configured ? 200 : 503).json({
+      status: db.connected || !db.configured ? 'ok' : 'degraded',
+      message: 'DevArena API is running',
+      database: db,
+    });
   });
 
-  app.use('/api/auth', authRoutes);
+  async function requireDatabase(_req, res, next) {
+    try {
+      await warmupConnection();
+      return next();
+    } catch (error) {
+      logger.error(`Database unavailable for request: ${error.message}`);
+      return res.status(503).json({
+        error: {
+          code: 'DATABASE_UNAVAILABLE',
+          message:
+            'The database is not reachable in this deployment. Verify DATABASE_URL in Vercel and redeploy.',
+        },
+      });
+    }
+  }
+
+  app.use('/api/auth', requireDatabase, authRoutes);
   app.use('/api/competitions', competitionRoutes);
-  app.use('/api/bookmarks', bookmarkRoutes);
-  app.use('/api/admin', adminRoutes);
-  app.use('/api/users', userRoutes);
+  app.use('/api/bookmarks', requireDatabase, bookmarkRoutes);
+  app.use('/api/admin', requireDatabase, adminRoutes);
+  app.use('/api/users', requireDatabase, userRoutes);
 
   // Serve static frontend files in production
   if (process.env.NODE_ENV === 'production') {

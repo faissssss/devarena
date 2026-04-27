@@ -62,6 +62,10 @@ function ensureObjectResponse(data, fallbackMessage) {
 function ensureCompetitionListResponse(data) {
   const parsed = ensureObjectResponse(data, 'Invalid competitions response from server');
 
+  if (parsed.error?.message) {
+    throw new Error(parsed.error.message);
+  }
+
   if (!Array.isArray(parsed.competitions)) {
     throw new Error('Invalid competitions response from server');
   }
@@ -72,6 +76,10 @@ function ensureCompetitionListResponse(data) {
 function ensurePlatformsResponse(data) {
   const parsed = ensureObjectResponse(data, 'Invalid platforms response from server');
 
+  if (parsed.error?.message) {
+    throw new Error(parsed.error.message);
+  }
+
   if (!Array.isArray(parsed.platforms)) {
     throw new Error('Invalid platforms response from server');
   }
@@ -81,6 +89,10 @@ function ensurePlatformsResponse(data) {
 
 function ensureBookmarksResponse(data) {
   const parsed = ensureObjectResponse(data, 'Invalid bookmarks response from server');
+
+  if (parsed.error?.message) {
+    throw new Error(parsed.error.message);
+  }
 
   if (!Array.isArray(parsed.bookmarks)) {
     throw new Error('Invalid bookmarks response from server');

@@ -69,6 +69,12 @@ describe('Database Connection Module', () => {
     expect(MockPool).toHaveBeenCalledTimes(1);
   });
 
+  test('isDatabaseConfigured reflects DATABASE_URL presence', () => {
+    expect(db.isDatabaseConfigured()).toBe(true);
+    delete process.env.DATABASE_URL;
+    expect(db.isDatabaseConfigured()).toBe(false);
+  });
+
   test('query executes successfully', async () => {
     mockPool.query.mockResolvedValueOnce({ rows: [{ id: 1 }], rowCount: 1 });
     const result = await db.query('SELECT * FROM users WHERE id = $1', [1]);
@@ -118,6 +124,26 @@ describe('Database Connection Module', () => {
     error.code = 'ECONNREFUSED';
     mockPool.query.mockRejectedValueOnce(error);
     await expect(db.testConnection()).resolves.toBe(false);
+  });
+
+  test('warmupConnection reuses a single in-flight connection check', async () => {
+    mockPool.query.mockResolvedValue({ rows: [], rowCount: 1 });
+
+    await Promise.all([db.warmupConnection(), db.warmupConnection()]);
+
+    expect(mockPool.query).toHaveBeenCalledTimes(1);
+    expect(mockPool.query).toHaveBeenCalledWith('SELECT 1');
+  });
+
+  test('getDatabaseStatus reports missing configuration', async () => {
+    delete process.env.DATABASE_URL;
+
+    await expect(db.getDatabaseStatus()).resolves.toEqual(
+      expect.objectContaining({
+        connected: false,
+        configured: false,
+      })
+    );
   });
 
   test('closePool shuts down the pool', async () => {

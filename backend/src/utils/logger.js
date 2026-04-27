@@ -31,8 +31,8 @@ const logger = winston.createLogger({
   exitOnError: false
 });
 
-// Add file transports in production
-if (process.env.NODE_ENV === 'production') {
+// Vercel serverless functions should log to stdout/stderr only.
+if (process.env.NODE_ENV === 'production' && !process.env.VERCEL) {
   logger.add(
     new winston.transports.File({
       filename: 'logs/error.log',

@@ -2,15 +2,24 @@ import pg from 'pg';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { existsSync } from 'fs';
 
 // Get the directory of this file
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Load .env from project root (3 levels up: utils -> src -> backend -> root)
-dotenv.config({ path: join(__dirname, '../../../.env') });
+// Load local env files for non-Vercel environments without overriding runtime env vars.
+for (const envPath of [
+  join(__dirname, '../../../.env.local'),
+  join(__dirname, '../../../.env'),
+]) {
+  if (existsSync(envPath)) {
+    dotenv.config({ path: envPath, override: false });
+  }
+}
 
 const { Pool } = pg;
+const DEFAULT_POOL_SIZE = process.env.VERCEL ? '5' : '20';
 
 /**
  * Database connection configuration
@@ -18,7 +27,7 @@ const { Pool } = pg;
 const dbConfig = {
   connectionString: process.env.DATABASE_URL,
   // Connection pool settings
-  max: parseInt(process.env.DB_POOL_SIZE || '20', 10), // Maximum number of clients in the pool
+  max: parseInt(process.env.DB_POOL_SIZE || DEFAULT_POOL_SIZE, 10), // Maximum number of clients in the pool
   idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
   connectionTimeoutMillis: 10000, // Return an error after 10 seconds if connection cannot be established
   // Retry settings
@@ -30,13 +39,18 @@ const dbConfig = {
  * PostgreSQL connection pool instance
  */
 let pool = null;
+let warmupPromise = null;
+
+export function isDatabaseConfigured() {
+  return Boolean(process.env.DATABASE_URL);
+}
 
 /**
  * Initialize the database connection pool
  * @returns {Pool} PostgreSQL connection pool
  */
 export function initializePool() {
-  if (!process.env.DATABASE_URL) {
+  if (!isDatabaseConfigured()) {
     throw new Error(
       'DATABASE_URL environment variable is required but not defined'
     );
@@ -116,6 +130,7 @@ export async function query(text, params = [], retryCount = 0) {
 
     // Retry logic for connection errors
     if (shouldRetry(error) && retryCount < dbConfig.maxRetries) {
+      await resetBrokenPool();
       const delay = calculateRetryDelay(retryCount);
       console.log(
         `Retrying query in ${delay}ms (attempt ${retryCount + 1}/${dbConfig.maxRetries})`
@@ -167,6 +182,73 @@ export async function closePool() {
     await pool.end();
     pool = null;
     console.log('Database connection pool closed');
+  }
+
+  warmupPromise = null;
+}
+
+async function resetBrokenPool() {
+  if (!pool) {
+    return;
+  }
+
+  try {
+    await closePool();
+  } catch (closeError) {
+    console.error('Failed to reset database connection pool', {
+      error: closeError.message,
+    });
+    pool = null;
+    warmupPromise = null;
+  }
+}
+
+export async function warmupConnection() {
+  if (!isDatabaseConfigured()) {
+    throw new Error(
+      'DATABASE_URL environment variable is required but not defined'
+    );
+  }
+
+  if (!warmupPromise) {
+    warmupPromise = (async () => {
+      const currentPool = getPool();
+      await currentPool.query('SELECT 1');
+      return true;
+    })().catch(async (error) => {
+      warmupPromise = null;
+      if (shouldRetry(error)) {
+        await resetBrokenPool();
+      }
+      throw error;
+    });
+  }
+
+  return warmupPromise;
+}
+
+export async function getDatabaseStatus() {
+  if (!isDatabaseConfigured()) {
+    return {
+      connected: false,
+      configured: false,
+      message: 'DATABASE_URL is not configured',
+    };
+  }
+
+  try {
+    await warmupConnection();
+    return {
+      connected: true,
+      configured: true,
+      message: 'Database connection is ready',
+    };
+  } catch (error) {
+    return {
+      connected: false,
+      configured: true,
+      message: error.message || 'Database connection failed',
+    };
   }
 }
 
@@ -221,4 +303,7 @@ export default {
   testConnection,
   closePool,
   initializePool,
+  isDatabaseConfigured,
+  warmupConnection,
+  getDatabaseStatus,
 };
