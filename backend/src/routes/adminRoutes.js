@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
 import { authenticate, requireAdmin } from '../middleware/auth.js';
+import { syncLimiter } from '../middleware/security.js';
 import { syncAll, getSyncLogs } from '../services/dataSyncService.js';
 import {
   deleteCompetition,
@@ -13,7 +14,7 @@ const router = Router();
 
 router.use(authenticate, requireAdmin);
 
-router.post('/sync', async (req, res, next) => {
+router.post('/sync', syncLimiter, async (req, res, next) => {
   try {
     const result = await syncAll();
     res.json(result);

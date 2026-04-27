@@ -7,6 +7,8 @@
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
     "build": "cd frontend && npm run build",
+    "vercel-build": "cd frontend && npm install && npm run build",
+    "start": "cd backend && node src/server.js",
     "start:prod": "cd backend && NODE_ENV=production node src/server.js",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
   },
@@ -18,6 +20,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "jest": "^30.3.0"
   }
 }

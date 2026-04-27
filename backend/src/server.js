@@ -11,6 +11,8 @@ import bookmarkRoutes from './routes/bookmarkRoutes.js';
 import competitionRoutes from './routes/competitionRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import { ensureCsrfToken } from './middleware/csrf.js';
+import { helmetConfig, apiLimiter } from './middleware/security.js';
+import logger from './utils/logger.js';
 import { startScheduler } from './scheduler.js';
 
 dotenv.config();
@@ -24,16 +26,29 @@ const isDirectExecution =
 export function createApp() {
   const app = express();
 
+  // Security middleware - Helmet.js for security headers
+  app.use(helmetConfig);
+
+  // CORS configuration
   app.use(cors({ 
     origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
     credentials: true // Allow cookies to be sent
   }));
+
+  // Body parsing middleware
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
-  app.use(ensureCsrfToken); // Ensure CSRF token is set for all requests
 
+  // CSRF protection
+  app.use(ensureCsrfToken);
+
+  // Rate limiting for all API routes
+  app.use('/api/', apiLimiter);
+
+  // Health check endpoint (no rate limiting)
   app.get('/api/health', (req, res) => {
+    logger.info('Health check requested');
     res.json({ status: 'ok', message: 'DevArena API is running' });
   });
 
@@ -62,7 +77,14 @@ export function createApp() {
   }
 
   app.use((err, req, res, _next) => {
-    console.error(err.stack);
+    // Log error with Winston
+    logger.error(`${err.message}`, { 
+      stack: err.stack,
+      path: req.path,
+      method: req.method,
+      ip: req.ip
+    });
+
     res.status(err.statusCode || 500).json({
       error: {
         code: err.code || 'INTERNAL_SERVER_ERROR',
@@ -83,8 +105,9 @@ export function startServer(port = process.env.PORT || 3000) {
   }
 
   serverInstance = app.listen(port, () => {
-    console.log(`DevArena API server running on port ${port}`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    logger.info(`DevArena API server running on port ${port}`);
+    logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    logger.info(`CORS Origin: ${process.env.CORS_ORIGIN || 'http://localhost:5173'}`);
   });
 
   startScheduler();

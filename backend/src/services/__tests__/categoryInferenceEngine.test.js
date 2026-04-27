@@ -18,7 +18,7 @@ describe('categoryInferenceEngine', () => {
     });
 
     test('each category has at least one keyword', () => {
-      Object.entries(CATEGORY_KEYWORDS).forEach(([category, keywords]) => {
+      Object.entries(CATEGORY_KEYWORDS).forEach(([_category, keywords]) => {
         expect(keywords.length).toBeGreaterThan(0);
       });
     });

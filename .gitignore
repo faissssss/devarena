@@ -11,6 +11,7 @@ pnpm-debug.log*
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
 
 # Build outputs
 dist/
@@ -41,6 +42,12 @@ Thumbs.db
 tmp/
 temp/
 *.tmp
+.tmp-*
+temp_*.csv
+
+# Test results
+test-results/
+playwright-report/
 
 # Database
 *.db
@@ -50,3 +57,8 @@ temp/
 # Production
 .vercel
 .netlify
+
+# Sensitive directories (internal documentation, AI specs, personal configs)
+.kiro/
+.agents/
+docs/

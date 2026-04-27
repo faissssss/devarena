@@ -1,5 +1,4 @@
 import { jest, describe, test, expect, beforeEach } from '@jest/globals';
-import axios from 'axios';
 
 const mockQuery = jest.fn();
 

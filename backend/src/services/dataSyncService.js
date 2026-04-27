@@ -39,20 +39,21 @@ function buildClistRequestConfig() {
   return config;
 }
 
-function buildKaggleRequestConfig() {
-  const config = {
-    timeout: getTimeout(),
-  };
-
-  if (process.env.KAGGLE_USERNAME && process.env.KAGGLE_API_KEY) {
-    config.auth = {
-      username: process.env.KAGGLE_USERNAME,
-      password: process.env.KAGGLE_API_KEY,
-    };
-  }
-
-  return config;
-}
+// Kaggle API configuration (currently unused, kept for future implementation)
+// function buildKaggleRequestConfig() {
+//   const config = {
+//     timeout: getTimeout(),
+//   };
+//
+//   if (process.env.KAGGLE_USERNAME && process.env.KAGGLE_API_KEY) {
+//     config.auth = {
+//       username: process.env.KAGGLE_USERNAME,
+//       password: process.env.KAGGLE_API_KEY,
+//     };
+//   }
+//
+//   return config;
+// }
 
 export async function createSyncLog({
   source,

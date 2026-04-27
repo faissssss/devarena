@@ -10,6 +10,7 @@ import {
   loginWithOAuth,
   register,
 } from '../services/authService.js';
+import { authLimiter } from '../middleware/security.js';
 
 const router = Router();
 
@@ -196,6 +197,7 @@ async function handleOAuthCallback(req, res, provider) {
 
 router.post(
   '/register',
+  authLimiter, // Apply stricter rate limiting
   [
     body('username').trim().isLength({ min: 3 }),
     body('email').isEmail(),
@@ -222,6 +224,7 @@ router.post(
 
 router.post(
   '/login',
+  authLimiter, // Apply stricter rate limiting
   [body('email').isEmail(), body('password').isLength({ min: 1 })],
   async (req, res, next) => {
     if (!handleValidation(req, res)) {
