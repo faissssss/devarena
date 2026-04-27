@@ -6,6 +6,7 @@ import { AdminRoute, ProtectedRoute } from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import AdminPage from './pages/AdminPage';
+import AuthCallbackPage from './pages/AuthCallbackPage';
 import CompetitionDetailPage from './pages/CompetitionDetailPage';
 import DashboardPage from './pages/DashboardPage';
 import ExplorePage from './pages/ExplorePage';
@@ -26,6 +27,7 @@ function App() {
               <Route path="/landing" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/auth/callback" element={<AuthCallbackPage />} />
             </Route>
 
             {/* App pages with sidebar */}

@@ -184,7 +184,7 @@ export default function DashboardPage() {
           </a>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
           {visible.map((bookmark) => (
             <CompetitionCard
               key={bookmark.id}

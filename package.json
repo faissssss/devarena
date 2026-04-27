@@ -1,33 +1,23 @@
 {
-  "name": "devarena-platform",
+  "name": "devarena",
   "version": "1.0.0",
-  "description": "DevArena - A full-stack web application that aggregates developer competitions from multiple external APIs",
-  "private": true,
-  "workspaces": [
-    "frontend",
-    "backend"
-  ],
+  "description": "DevArena - Developer Competition Platform",
   "scripts": {
-    "install:all": "npm install && npm install --workspace=frontend && npm install --workspace=backend",
-    "dev": "concurrently \"npm run dev --workspace=backend\" \"npm run dev --workspace=frontend\"",
-    "build": "npm run build --workspace=frontend && npm run build --workspace=backend",
-    "test": "npm run test --workspace=backend && npm run test --workspace=frontend",
-    "coverage": "npm run test:coverage --workspace=backend && npm run test:coverage --workspace=frontend",
-    "test:e2e": "playwright test",
-    "test:quality": "playwright test e2e/quality.spec.js",
-    "verify:live-apis": "npm run verify:live-apis --workspace=backend",
-    "lint": "npm run lint --workspace=frontend && npm run lint --workspace=backend",
-    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
-    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\""
+    "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start:prod": "cd backend && NODE_ENV=production node src/server.js",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
   },
+  "keywords": [
+    "competitions",
+    "developers",
+    "platform"
+  ],
+  "author": "",
+  "license": "MIT",
   "devDependencies": {
-    "@axe-core/playwright": "^4.10.2",
-    "@playwright/test": "^1.59.1",
-    "concurrently": "^8.2.2",
-    "prettier": "^3.1.1"
-  },
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "concurrently": "^8.2.2"
   }
 }

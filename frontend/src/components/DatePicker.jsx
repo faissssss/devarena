@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 /**
  * DatePicker Component
@@ -26,11 +26,20 @@ export default function DatePicker({
   const [hoverDate, setHoverDate] = useState(null);
   const [tempStartDate, setTempStartDate] = useState(null);
 
+  useEffect(() => {
+    if (mode === 'range' && !selectedRange.startDate && !selectedRange.endDate) {
+      setTempStartDate(null);
+      setHoverDate(null);
+    }
+  }, [mode, selectedRange.endDate, selectedRange.startDate]);
+
   const getDaysInMonth = (date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
     const firstDay = new Date(year, month, 1);
+    firstDay.setHours(0, 0, 0, 0); // Normalize to midnight
     const lastDay = new Date(year, month + 1, 0);
+    lastDay.setHours(0, 0, 0, 0); // Normalize to midnight
     const daysInMonth = lastDay.getDate();
     const startingDayOfWeek = firstDay.getDay();
 
@@ -41,7 +50,9 @@ export default function DatePicker({
     }
     // Add all days in month
     for (let day = 1; day <= daysInMonth; day++) {
-      days.push(new Date(year, month, day));
+      const dayDate = new Date(year, month, day);
+      dayDate.setHours(0, 0, 0, 0); // Normalize to midnight
+      days.push(dayDate);
     }
     return days;
   };
@@ -88,12 +99,14 @@ export default function DatePicker({
     if (mode === 'single') {
       onDateSelect(date);
     } else {
-      // Range mode
       if (!tempStartDate) {
-        // First click: set start date
         setTempStartDate(date);
+        onRangeSelect(date, date);
+      } else if (isSameDay(tempStartDate, date)) {
+        onRangeSelect(date, date);
+        setTempStartDate(null);
+        setHoverDate(null);
       } else {
-        // Second click: set end date and complete range
         const start = tempStartDate < date ? tempStartDate : date;
         const end = tempStartDate < date ? date : tempStartDate;
         onRangeSelect(start, end);
@@ -114,16 +127,6 @@ export default function DatePicker({
         } else {
           onRangeSelect(today, today);
         }
-        break;
-      case 'next7':
-        const next7 = new Date(today);
-        next7.setDate(today.getDate() + 7);
-        onRangeSelect(today, next7);
-        break;
-      case 'next30':
-        const next30 = new Date(today);
-        next30.setDate(today.getDate() + 30);
-        onRangeSelect(today, next30);
         break;
       case 'clear':
         if (mode === 'single') {
@@ -223,7 +226,7 @@ export default function DatePicker({
       </div>
 
       {/* Calendar grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 16 }}>
         {days.map((date, index) => {
           if (!date) {
             return <div key={`empty-${index}`} style={{ aspectRatio: '1', minHeight: 32 }} />;
@@ -237,6 +240,8 @@ export default function DatePicker({
               : isSameDay(date, selectedRange.startDate) || isSameDay(date, selectedRange.endDate);
           const inRange = isDateInRange(date);
           const inHoverRange = isDateInHoverRange(date);
+          const isRangeStart = mode === 'range' && isSameDay(date, selectedRange.startDate);
+          const isRangeEnd = mode === 'range' && isSameDay(date, selectedRange.endDate);
 
           let buttonStyle = {
             aspectRatio: '1',
@@ -244,26 +249,31 @@ export default function DatePicker({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '0.875rem',
+            fontSize: '0.8125rem',
             borderRadius: 'var(--radius)',
             transition: 'all 150ms ease',
             border: 'none',
             fontFamily: 'var(--font-ui)',
             cursor: isDisabled ? 'not-allowed' : 'pointer',
+            position: 'relative',
+            overflow: 'hidden',
           };
 
           if (isDisabled) {
             buttonStyle.color = 'var(--muted-foreground)';
             buttonStyle.background = 'transparent';
+            buttonStyle.opacity = 0.4;
           } else if (isSelected) {
             buttonStyle.background = 'var(--primary)';
             buttonStyle.color = 'var(--primary-foreground)';
-            buttonStyle.fontWeight = 500;
+            buttonStyle.fontWeight = 600;
+            buttonStyle.zIndex = 2;
           } else if (inRange) {
-            buttonStyle.background = 'var(--muted)';
+            buttonStyle.background = 'rgba(59,130,246,0.15)';
             buttonStyle.color = 'var(--foreground)';
+            buttonStyle.fontWeight = 500;
           } else if (inHoverRange) {
-            buttonStyle.background = 'var(--muted)';
+            buttonStyle.background = 'rgba(59,130,246,0.08)';
             buttonStyle.color = 'var(--foreground)';
           } else {
             buttonStyle.background = 'transparent';
@@ -271,20 +281,21 @@ export default function DatePicker({
           }
 
           if (isToday && !isSelected) {
-            buttonStyle.border = '1px solid var(--primary)';
+            buttonStyle.border = '2px solid var(--primary)';
+            buttonStyle.fontWeight = 600;
           }
 
           return (
             <button
               key={date.toISOString()}
               onClick={() => handleDateClick(date)}
-              onMouseEnter={() => {
+              onMouseEnter={(event) => {
                 if (mode === 'range' && tempStartDate) setHoverDate(date);
                 if (!isDisabled && !isSelected && !inRange && !inHoverRange) {
                   event.currentTarget.style.background = 'var(--accent)';
                 }
               }}
-              onMouseLeave={() => {
+              onMouseLeave={(event) => {
                 setHoverDate(null);
                 if (!isDisabled && !isSelected && !inRange && !inHoverRange) {
                   event.currentTarget.style.background = 'transparent';
@@ -314,24 +325,6 @@ export default function DatePicker({
         >
           Today
         </button>
-        {mode === 'range' && (
-          <>
-            <button
-              onClick={() => handleQuickSelect('next7')}
-              className="btn btn-primary"
-              style={{ padding: '4px 12px', fontSize: '0.875rem' }}
-            >
-              Next 7 days
-            </button>
-            <button
-              onClick={() => handleQuickSelect('next30')}
-              className="btn btn-primary"
-              style={{ padding: '4px 12px', fontSize: '0.875rem' }}
-            >
-              Next 30 days
-            </button>
-          </>
-        )}
         <button
           onClick={() => handleQuickSelect('clear')}
           style={{

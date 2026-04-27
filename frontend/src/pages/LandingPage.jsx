@@ -29,6 +29,99 @@ const platformsToDisplay = [
   'Project Euler', 'RoboContest', 'TopCoder', 'Toph', 'Universal Cup', 'UOJ', 'USACO', 'Wincent Dragonbyte', 'Yandex CodeRun', 'Yandex CYF'
 ];
 
+// ─── Terminal Typing Effect Component ───
+const TerminalTyping = ({ words, typingSpeed = 100, deletingSpeed = 50, pauseBetweenWords = 500, pauseBeforeDelete = 2000 }) => {
+  const [displayedText, setDisplayedText] = useState('');
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [currentCharIndex, setCurrentCharIndex] = useState(0);
+  const [showCursor, setShowCursor] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
+
+  useEffect(() => {
+    // Blinking cursor effect
+    const cursorInterval = setInterval(() => {
+      setShowCursor((prev) => !prev);
+    }, 500);
+    return () => clearInterval(cursorInterval);
+  }, []);
+
+  useEffect(() => {
+    const currentWord = words[currentWordIndex];
+    
+    if (!isDeleting) {
+      // Typing forward
+      if (currentCharIndex < currentWord.length) {
+        const timeout = setTimeout(() => {
+          setDisplayedText((prev) => prev + currentWord[currentCharIndex]);
+          setCurrentCharIndex((prev) => prev + 1);
+        }, typingSpeed);
+        return () => clearTimeout(timeout);
+      } else if (currentWordIndex < words.length - 1) {
+        // Word complete, add newline and move to next word
+        const timeout = setTimeout(() => {
+          setDisplayedText((prev) => prev + '\n');
+          setCurrentWordIndex((prev) => prev + 1);
+          setCurrentCharIndex(0);
+        }, pauseBetweenWords);
+        return () => clearTimeout(timeout);
+      } else {
+        // All words typed, pause before deleting
+        const timeout = setTimeout(() => {
+          setIsComplete(true);
+          setIsDeleting(true);
+        }, pauseBeforeDelete);
+        return () => clearTimeout(timeout);
+      }
+    } else {
+      // Deleting backward
+      if (displayedText.length > 0) {
+        const timeout = setTimeout(() => {
+          setDisplayedText((prev) => prev.slice(0, -1));
+          
+          // Check if we just deleted a newline, move to previous word
+          if (displayedText[displayedText.length - 1] === '\n') {
+            setCurrentWordIndex((prev) => Math.max(0, prev - 1));
+          }
+        }, deletingSpeed);
+        return () => clearTimeout(timeout);
+      } else {
+        // Finished deleting, restart
+        const timeout = setTimeout(() => {
+          setIsDeleting(false);
+          setIsComplete(false);
+          setCurrentWordIndex(0);
+          setCurrentCharIndex(0);
+        }, pauseBetweenWords);
+        return () => clearTimeout(timeout);
+      }
+    }
+  }, [currentCharIndex, currentWordIndex, words, typingSpeed, deletingSpeed, pauseBetweenWords, pauseBeforeDelete, isDeleting, displayedText, isComplete]);
+
+  return (
+    <h1 style={{ 
+      fontSize: 'clamp(3rem, 10vw, 7rem)', 
+      lineHeight: 0.9, 
+      letterSpacing: '-0.05em', 
+      margin: '0 0 24px',
+      fontFamily: 'var(--font-display)',
+      textTransform: 'uppercase',
+      whiteSpace: 'pre-line',
+      minHeight: 'clamp(9rem, 30vw, 21rem)',
+      position: 'relative',
+    }}>
+      {displayedText}
+      <span style={{ 
+        opacity: showCursor ? 1 : 0,
+        transition: 'opacity 0.1s',
+        color: 'var(--primary)',
+        position: 'absolute',
+        marginLeft: '0.1em',
+      }}>_</span>
+    </h1>
+  );
+};
+
 // ─── Animation Components ───
 
 const CountUp = ({ end, duration = 2000, suffix = "" }) => {
@@ -233,14 +326,14 @@ export default function LandingPage() {
 
       {/* ─── Hero Section ─── */}
       <section style={{ 
-        height: '90dvh', 
+        minHeight: '100dvh', 
         display: 'flex', 
         flexDirection: 'column', 
-        justifyContent: 'center', 
+        justifyContent: 'flex-start', 
         alignItems: 'center', 
         textAlign: 'center', 
         position: 'relative',
-        padding: '0 24px',
+        padding: '12vh 24px 120px',
         borderBottom: '1px solid var(--border)',
         overflow: 'hidden'
       }}>
@@ -256,16 +349,13 @@ export default function LandingPage() {
         
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 900 }}>
           <ScrollReveal>
-            <h1 style={{ 
-              fontSize: 'clamp(3rem, 10vw, 7rem)', 
-              lineHeight: 0.9, 
-              letterSpacing: '-0.05em', 
-              margin: '0 0 24px',
-              fontFamily: 'var(--font-display)',
-              textTransform: 'uppercase'
-            }}>
-              Code.<br/>Compete.<br/>Conquer.
-            </h1>
+            <TerminalTyping 
+              words={['Code.', 'Compete.', 'Conquer.']} 
+              typingSpeed={80} 
+              deletingSpeed={40}
+              pauseBetweenWords={300} 
+              pauseBeforeDelete={2000}
+            />
           </ScrollReveal>
           
           <ScrollReveal delay={0.2}>

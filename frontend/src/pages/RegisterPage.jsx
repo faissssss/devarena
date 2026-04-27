@@ -1,25 +1,41 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
+import SocialAuthButtons from '../components/SocialAuthButtons';
 import { useAuth } from '../context/AuthContext';
 
 export default function RegisterPage() {
-  const { register, login, loading } = useAuth();
+  const { register, login, continueWithProvider, loading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ username: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Redirect when authentication is complete (only after form submission)
+  useEffect(() => {
+    if (isAuthenticated && isSubmitting) {
+      console.log('[RegisterPage] User authenticated, navigating to home');
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, isSubmitting, navigate]);
 
   async function handleSubmit(event) {
     event.preventDefault();
     setError('');
+    setIsSubmitting(true);
     try {
       await register(form);
       await login({ email: form.email, password: form.password });
-      navigate('/dashboard');
+      // Navigation will happen automatically via useEffect when isAuthenticated becomes true
     } catch (err) {
       setError(err.message);
+      setIsSubmitting(false);
     }
+  }
+
+  async function handleProvider(provider) {
+    continueWithProvider(provider, '/');
   }
 
   const labelStyle = {
@@ -36,7 +52,7 @@ export default function RegisterPage() {
       style={{
         maxWidth: 420,
         margin: '0 auto',
-        paddingTop: 'clamp(24px, 4vw, 48px)',
+        paddingTop: 'clamp(16px, 3vw, 32px)',
       }}
     >
       <div
@@ -44,19 +60,44 @@ export default function RegisterPage() {
           background: 'var(--card)',
           border: '1px solid var(--border)',
           borderRadius: 'var(--radius)',
-          padding: 'clamp(28px, 4vw, 44px)',
+          padding: 'clamp(20px, 3vw, 32px)',
           boxShadow: 'rgba(0,0,0,0.08) 0px 20px 60px, rgba(0,0,0,0.04) 0px 8px 24px',
         }}
       >
-        <p className="text-eyebrow" style={{ marginBottom: 10 }}>Join the arena</p>
+        <p className="text-eyebrow" style={{ marginBottom: 8 }}>Join the arena</p>
         <h1
           className="text-section"
-          style={{ margin: '0 0 32px', fontSize: '2rem', letterSpacing: '-0.5px' }}
+          style={{ margin: '0 0 24px', fontSize: '1.75rem', letterSpacing: '-0.5px' }}
         >
           Create your account
         </h1>
 
-        <form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <SocialAuthButtons busy={loading} onSelect={handleProvider} />
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            margin: '14px 0',
+          }}
+        >
+          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          <span
+            style={{
+              fontFamily: 'var(--font-ui)',
+              fontSize: '0.75rem',
+              color: 'var(--muted-foreground)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em',
+            }}
+          >
+            Or with email
+          </span>
+          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+        </div>
+
+        <form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {/* Username */}
           <div>
             <label htmlFor="reg-username" style={labelStyle}>Username</label>
@@ -187,7 +228,7 @@ export default function RegisterPage() {
             fontFamily: 'var(--font-ui)',
             fontSize: '0.875rem',
             color: 'var(--muted-foreground)',
-            marginTop: 20,
+            marginTop: 16,
             textAlign: 'center',
           }}
         >

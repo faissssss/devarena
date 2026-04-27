@@ -141,8 +141,9 @@ export default function PlatformMultiSelect({
         <div
           style={{
             position: 'absolute',
+            top: 'calc(100% + 8px)',
+            left: 0,
             zIndex: 50,
-            marginTop: 8,
             width: '100%',
             background: 'var(--popover)',
             border: '1px solid var(--border)',

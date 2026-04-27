@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
+import CompetitionCard from '../components/CompetitionCard';
 import { useAuth } from '../context/AuthContext';
 import { bookmarkApi, competitionApi, unwrapError } from '../services/api';
+import { getCompetitionDescription } from '../utils/competitionDescription';
 import { formatPlatformName } from '../utils/platformFormatter';
 import { formatPrize } from '../utils/prizeFormatter';
 
@@ -63,6 +65,8 @@ export default function CompetitionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const [error, setError] = useState('');
+  const [relatedCompetitions, setRelatedCompetitions] = useState([]);
+  const [relatedLoading, setRelatedLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -86,6 +90,33 @@ export default function CompetitionDetailPage() {
     load();
     return () => { cancelled = true; };
   }, [competitionId, isAuthenticated]);
+
+  // Fetch related competitions based on category
+  useEffect(() => {
+    if (!competition) return;
+    let cancelled = false;
+    async function loadRelated() {
+      setRelatedLoading(true);
+      try {
+        const res = await competitionApi.getAll({ 
+          category: competition.category,
+          status: 'ongoing,upcoming',
+          limit: 4
+        });
+        if (cancelled) return;
+        // Filter out the current competition
+        const filtered = res.competitions.filter(c => c.id !== competition.id).slice(0, 3);
+        setRelatedCompetitions(filtered);
+      } catch (err) {
+        // Silently fail for related competitions
+        console.error('Failed to load related competitions:', err);
+      } finally {
+        if (!cancelled) setRelatedLoading(false);
+      }
+    }
+    loadRelated();
+    return () => { cancelled = true; };
+  }, [competition]);
 
   async function handleToggleBookmark() {
     if (!isAuthenticated) { navigate('/login'); return; }
@@ -243,13 +274,13 @@ export default function CompetitionDetailPage() {
         <p
           className="text-body-serif"
           style={{
-            color: 'var(--text-secondary)',
+            color: 'var(--muted-foreground)',
             margin: '0 0 28px',
-            maxWidth: 680,
-            lineHeight: 1.7,
+            maxWidth: 720,
+            lineHeight: 1.75,
           }}
         >
-          {competition.description || 'A detailed competition brief is not available yet.'}
+          {getCompetitionDescription(competition)}
         </p>
 
         {/* Meta grid */}
@@ -309,16 +340,26 @@ export default function CompetitionDetailPage() {
             className="btn"
             aria-pressed={Boolean(bookmarkId)}
             style={{
-              background: bookmarkId ? 'var(--color-dark)' : 'var(--surface-300)',
-              color: bookmarkId ? '#fef9f0' : 'var(--color-dark)',
-              border: '1px solid var(--border-primary)',
+              background: bookmarkId ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.12)',
+              color: bookmarkId ? '#ef4444' : '#16a34a',
+              border: bookmarkId ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(34,197,94,0.3)',
               padding: '10px 20px',
               borderRadius: 9999,
               opacity: bookmarkLoading ? 0.6 : 1,
               cursor: bookmarkLoading ? 'not-allowed' : 'pointer',
+              fontWeight: 600,
+              transition: 'all 200ms ease',
+            }}
+            onMouseEnter={(e) => {
+              if (!bookmarkLoading) {
+                e.currentTarget.style.background = bookmarkId ? 'rgba(239,68,68,0.18)' : 'rgba(34,197,94,0.18)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = bookmarkId ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.12)';
             }}
           >
-            {bookmarkLoading ? '…' : bookmarkId ? 'Remove bookmark' : 'Save bookmark'}
+            {bookmarkLoading ? '…' : bookmarkId ? '✕ Remove bookmark' : '+ Save bookmark'}
           </button>
           <a
             href={competition.url}
@@ -331,6 +372,38 @@ export default function CompetitionDetailPage() {
           </a>
         </div>
       </article>
+
+      {/* Related Competitions */}
+      {relatedCompetitions.length > 0 && (
+        <section style={{ marginTop: 32 }}>
+          <h2
+            className="text-section"
+            style={{ 
+              margin: '0 0 20px', 
+              fontSize: '1.5rem',
+              fontWeight: 600,
+            }}
+          >
+            Related Competitions
+          </h2>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+              gap: 16,
+            }}
+          >
+            {relatedCompetitions.map((comp) => (
+              <CompetitionCard
+                key={comp.id}
+                competition={comp}
+                bookmarkId={null}
+                onToggleBookmark={null}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

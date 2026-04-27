@@ -198,8 +198,8 @@ export function formatPlatformName(rawPlatform) {
   
   // Split by dots, dashes, or slashes and capitalize each part
   formatted = formatted
-    .split(/[.\-\/]/)
-    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .split(/[./-]/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
   
   return formatted;

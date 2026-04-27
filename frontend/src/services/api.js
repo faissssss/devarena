@@ -2,12 +2,27 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: '/api',
+  withCredentials: true, // Enable sending cookies
 });
+
+// Helper to get CSRF token from cookie
+function getCsrfToken() {
+  const match = document.cookie.match(/devarena_csrf=([^;]+)/);
+  return match ? match[1] : null;
+}
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('devarena_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  // Add CSRF token for non-GET requests
+  if (config.method && !['get', 'head', 'options'].includes(config.method.toLowerCase())) {
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+      config.headers['X-CSRF-Token'] = csrfToken;
+    }
   }
 
   return config;
@@ -17,8 +32,15 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      console.log('[API] 401 Unauthorized - clearing auth and redirecting to login');
       localStorage.removeItem('devarena_token');
       localStorage.removeItem('devarena_user');
+      
+      // Only redirect if not already on login/register pages
+      const currentPath = window.location.pathname;
+      if (!currentPath.startsWith('/login') && !currentPath.startsWith('/register') && !currentPath.startsWith('/auth/callback')) {
+        window.location.href = `/login?from=${encodeURIComponent(currentPath)}`;
+      }
     }
 
     return Promise.reject(error);
@@ -37,6 +59,10 @@ export const authApi = {
   async register(payload) {
     const response = await api.post('/auth/register', payload);
     return response.data;
+  },
+  getOAuthUrl(provider, nextPath = '/') {
+    const params = new URLSearchParams({ next: nextPath });
+    return `/api/auth/oauth/${provider}?${params.toString()}`;
   },
 };
 

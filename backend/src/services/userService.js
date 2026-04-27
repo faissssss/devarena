@@ -4,7 +4,7 @@ import { query } from '../utils/db.js';
 
 export async function getUserById(id) {
   const result = await query(
-    `SELECT id, username, email, role, created_at FROM users WHERE id = $1`,
+    `SELECT id, username, email, role, created_at, avatar_url FROM users WHERE id = $1`,
     [id]
   );
 
@@ -18,7 +18,7 @@ export async function updateCurrentUser(userId, updates) {
          email = COALESCE($3, email),
          password_hash = COALESCE($4, password_hash)
      WHERE id = $1
-     RETURNING id, username, email, role, created_at`,
+     RETURNING id, username, email, role, created_at, avatar_url`,
     [userId, updates.username ?? null, updates.email ?? null, updates.passwordHash ?? null]
   );
 
@@ -32,6 +32,12 @@ export async function changePassword(userId, currentPassword, nextPassword) {
   if (!user) {
     const error = new Error('User not found');
     error.statusCode = 404;
+    throw error;
+  }
+
+  if (!user.password_hash) {
+    const error = new Error('This account uses Google or GitHub sign-in. Add a password from a dedicated account settings flow first.');
+    error.statusCode = 400;
     throw error;
   }
 

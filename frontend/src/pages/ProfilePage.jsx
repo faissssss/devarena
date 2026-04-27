@@ -27,7 +27,6 @@ export default function ProfilePage() {
   const [showNewPw, setShowNewPw] = useState(false);
   const [showCurrentPw, setShowCurrentPw] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [avatarHover, setAvatarHover] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -69,22 +68,6 @@ export default function ProfilePage() {
     } catch (err) {
       setError(unwrapError(err, 'Unable to update password'));
     }
-  }
-
-  function handleAvatarClick() {
-    // Create a hidden file input
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = async (e) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        // TODO: Implement avatar upload to backend
-        setMessage('Avatar upload feature coming soon!');
-        setTimeout(() => setMessage(''), 3000);
-      }
-    };
-    input.click();
   }
 
   function handleLogout() {
@@ -194,13 +177,7 @@ export default function ProfilePage() {
                 padding: '24px',
               }}
             >
-              {/* Avatar with Edit Overlay */}
-              <div 
-                style={{ position: 'relative', width: 'fit-content', marginBottom: 16, cursor: 'pointer' }}
-                onMouseEnter={() => setAvatarHover(true)}
-                onMouseLeave={() => setAvatarHover(false)}
-                onClick={handleAvatarClick}
-              >
+              <div style={{ width: 'fit-content', marginBottom: 16 }}>
                 <div
                   className="avatar-box"
                   style={{
@@ -210,8 +187,6 @@ export default function ProfilePage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    transition: 'opacity 150ms ease',
-                    opacity: avatarHover ? 0.8 : 1,
                   }}
                 >
                   <span
@@ -224,27 +199,6 @@ export default function ProfilePage() {
                   >
                     {(user?.username || 'U')[0].toUpperCase()}
                   </span>
-                </div>
-                <div
-                  className="avatar-edit-icon"
-                  style={{
-                    position: 'absolute',
-                    bottom: -4,
-                    right: -4,
-                    width: 28,
-                    height: 28,
-                    borderRadius: 'var(--radius)',
-                    border: '2px solid var(--card)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'background 150ms ease',
-                  }}
-                  aria-label="Edit avatar"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 5v14M5 12h14" />
-                  </svg>
                 </div>
               </div>
 
@@ -633,60 +587,6 @@ export default function ProfilePage() {
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Account Actions Card */}
-          <div
-            style={{
-              background: 'var(--card)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius)',
-              padding: '24px',
-            }}
-          >
-            <h2
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: '1.125rem',
-                fontWeight: 400,
-                letterSpacing: '-0.08px',
-                color: 'var(--foreground)',
-                margin: '0 0 6px',
-              }}
-            >
-              Account actions
-            </h2>
-            <p
-              style={{
-                fontFamily: 'var(--font-ui)',
-                fontSize: '0.8125rem',
-                color: 'var(--muted-foreground)',
-                margin: '0 0 16px',
-              }}
-            >
-              Sign out of your account or manage your session.
-            </p>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="btn"
-              style={{
-                padding: '9px 18px',
-                background: 'var(--secondary)',
-                color: 'var(--secondary-foreground)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)',
-                transition: 'all 150ms ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--muted)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'var(--secondary)';
-              }}
-            >
-              Log out
-            </button>
           </div>
         </div>
       </div>
