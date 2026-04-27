@@ -16,7 +16,7 @@ export default function RegisterPage() {
   useEffect(() => {
     if (isAuthenticated && isSubmitting) {
       console.log('[RegisterPage] User authenticated, navigating to home');
-      navigate('/', { replace: true });
+      navigate('/home', { replace: true });
     }
   }, [isAuthenticated, isSubmitting, navigate]);
 
@@ -35,7 +35,7 @@ export default function RegisterPage() {
   }
 
   async function handleProvider(provider) {
-    continueWithProvider(provider, '/');
+    continueWithProvider(provider, '/home');
   }
 
   const labelStyle = {

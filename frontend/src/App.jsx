@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import AppShell from './components/AppShell';
 import AppShellWithSidebar from './components/AppShellWithSidebar';
@@ -24,7 +24,8 @@ function App() {
           <Routes>
             {/* Landing page with top nav (for non-authenticated users) */}
             <Route element={<AppShell />}>
-              <Route path="/landing" element={<LandingPage />} />
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/landing" element={<Navigate to="/" replace />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/auth/callback" element={<AuthCallbackPage />} />
@@ -32,7 +33,7 @@ function App() {
 
             {/* App pages with sidebar */}
             <Route element={<AppShellWithSidebar />}>
-              <Route path="/" element={<HomePage />} />
+              <Route path="/home" element={<HomePage />} />
               <Route path="/explore" element={<ExplorePage />} />
               <Route path="/competitions/:competitionId" element={<CompetitionDetailPage />} />
 

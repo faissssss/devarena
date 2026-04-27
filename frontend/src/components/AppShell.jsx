@@ -7,7 +7,7 @@ import logoDark from '../assets/dev-arena-logos/dev-arena-logo-dark.png';
 import logoLight from '../assets/dev-arena-logos/dev-arena-logo-light.png';
 
 const navItems = [
-  { to: '/',        label: 'Home' },
+  { to: '/home',        label: 'Home' },
   { to: '/explore', label: 'Explore' },
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/admin',   label: 'Admin' },
@@ -96,7 +96,7 @@ export default function AppShell() {
           {/* Logo */}
           <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
             <Link
-              to="/landing"
+              to="/"
               style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}
             >
               <img 
@@ -133,7 +133,7 @@ export default function AppShell() {
                 <NavLink
                   key={item.to}
                   to={item.to}
-                  end={item.to === '/'}
+                  end={item.to === '/home'}
                   style={({ isActive }) => ({
                     fontFamily: 'var(--font-ui)',
                     fontSize: '0.8125rem',
@@ -257,7 +257,7 @@ export default function AppShell() {
                   <NavLink
                     key={item.to}
                     to={item.to}
-                    end={item.to === '/'}
+                    end={item.to === '/home'}
                     onClick={() => setMobileOpen(false)}
                     style={({ isActive }) => ({
                       fontFamily: 'var(--font-ui)',

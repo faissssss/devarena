@@ -36,7 +36,7 @@ const UserIcon = () => (
 );
 
 const navItems = [
-  { to: '/', label: 'Home', icon: HomeIcon },
+  { to: '/home', label: 'Home', icon: HomeIcon },
   { to: '/explore', label: 'Explore', icon: SearchIcon },
   { to: '/dashboard', label: 'Dashboard', icon: DashboardIcon, protected: true },
   { to: '/profile', label: 'Profile', icon: UserIcon, protected: true },
@@ -67,7 +67,7 @@ export default function Sidebar() {
       {/* Back to Landing Page */}
       <div style={{ marginBottom: 20, paddingLeft: 6 }}>
         <NavLink 
-          to="/landing" 
+          to="/" 
           style={{ 
             fontSize: '0.6875rem', 
             color: 'var(--muted-foreground)', 
@@ -94,7 +94,7 @@ export default function Sidebar() {
       {/* Logo */}
       <div style={{ marginBottom: 24, paddingLeft: 6 }}>
         <Link 
-          to="/landing"
+          to="/home"
           style={{ 
             display: 'flex', 
             alignItems: 'center', 
@@ -133,7 +133,7 @@ export default function Sidebar() {
               <NavLink
                 key={item.to}
                 to={item.to}
-                end={item.to === '/'}
+                end={item.to === '/home'}
                 style={({ isActive }) => ({
                   display: 'flex',
                   alignItems: 'center',

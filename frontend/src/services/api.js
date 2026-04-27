@@ -60,7 +60,7 @@ export const authApi = {
     const response = await api.post('/auth/register', payload);
     return response.data;
   },
-  getOAuthUrl(provider, nextPath = '/') {
+  getOAuthUrl(provider, nextPath = '/home') {
     const params = new URLSearchParams({ next: nextPath });
     return `/api/auth/oauth/${provider}?${params.toString()}`;
   },

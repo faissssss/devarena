@@ -72,7 +72,7 @@ export default function ProfilePage() {
 
   function handleLogout() {
     logout();
-    navigate('/landing');
+    navigate('/');
   }
 
   const roleColor = user?.role === 'admin' ? 'var(--color-accent)' : '#1f8a65';

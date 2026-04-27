@@ -14,7 +14,7 @@ export default function AuthCallbackPage() {
 
     async function finishLogin() {
       const token = searchParams.get('token');
-      const nextPath = searchParams.get('next') || '/';
+      const nextPath = searchParams.get('next') || '/home';
       const error = searchParams.get('error');
 
       if (error) {

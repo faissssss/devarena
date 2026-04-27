@@ -16,7 +16,7 @@ export default function LoginPage() {
   // Redirect when authentication is complete (only after form submission)
   useEffect(() => {
     if (isAuthenticated && isSubmitting) {
-      const targetPath = location.state?.from?.pathname || '/';
+      const targetPath = location.state?.from?.pathname || '/home';
       console.log('[LoginPage] User authenticated, navigating to:', targetPath);
       navigate(targetPath, { replace: true });
     }
@@ -36,7 +36,7 @@ export default function LoginPage() {
   }
 
   async function handleProvider(provider) {
-    continueWithProvider(provider, location.state?.from?.pathname || '/');
+    continueWithProvider(provider, location.state?.from?.pathname || '/home');
   }
 
   return (
