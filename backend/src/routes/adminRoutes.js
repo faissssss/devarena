@@ -1,7 +1,8 @@
 import { Router } from 'express';
 
 import { authenticate, requireAdmin } from '../middleware/auth.js';
-import { syncLimiter } from '../middleware/security.js';
+// Rate limiting removed - ZERO CONSTRAINTS for Vercel deployment
+// import { syncLimiter } from '../middleware/security.js';
 import { syncAll, getSyncLogs } from '../services/dataSyncService.js';
 import {
   deleteCompetition,
@@ -14,7 +15,8 @@ const router = Router();
 
 router.use(authenticate, requireAdmin);
 
-router.post('/sync', syncLimiter, async (req, res, next) => {
+router.post('/sync', async (req, res, next) => {
+  // syncLimiter removed - ZERO CONSTRAINTS for Vercel deployment
   try {
     const result = await syncAll();
     res.json(result);

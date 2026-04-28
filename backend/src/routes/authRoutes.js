@@ -10,7 +10,8 @@ import {
   loginWithOAuth,
   register,
 } from '../services/authService.js';
-import { authLimiter } from '../middleware/security.js';
+// Rate limiting removed - ZERO CONSTRAINTS for Vercel deployment
+// import { authLimiter } from '../middleware/security.js';
 import { warmupConnection } from '../utils/db.js';
 
 const router = Router();
@@ -263,7 +264,7 @@ async function handleOAuthCallback(req, res, provider) {
 router.post(
   '/register',
   requireAuthDatabase,
-  authLimiter, // Apply stricter rate limiting
+  // authLimiter removed - ZERO CONSTRAINTS for Vercel deployment
   [
     body('username').trim().isLength({ min: 3 }),
     body('email').isEmail(),
@@ -291,7 +292,7 @@ router.post(
 router.post(
   '/login',
   requireAuthDatabase,
-  authLimiter, // Apply stricter rate limiting
+  // authLimiter removed - ZERO CONSTRAINTS for Vercel deployment
   [body('email').isEmail(), body('password').isLength({ min: 1 })],
   async (req, res, next) => {
     if (!handleValidation(req, res)) {

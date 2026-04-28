@@ -28,7 +28,7 @@ describe('Database Connection Module', () => {
     jest.resetModules();
     process.env.DATABASE_URL =
       'postgresql://user:password@localhost:5432/devarena_test';
-    process.env.SYNC_RETRIES = '3';
+    process.env.SYNC_RETRIES = '5'; // Updated from 3 to 5
     db = await import('../db.js');
   });
 
@@ -45,9 +45,10 @@ describe('Database Connection Module', () => {
     expect(MockPool).toHaveBeenCalledWith(
       expect.objectContaining({
         connectionString: process.env.DATABASE_URL,
-        max: 20,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 10000,
+        max: 20, // Local development default
+        idleTimeoutMillis: 60000, // Increased from 30000 to 60000
+        connectionTimeoutMillis: 30000, // Increased from 10000 to 30000
+        statement_timeout: 30000, // Added to prevent query timeouts
       })
     );
     expect(mockPool.on).toHaveBeenCalledWith('error', expect.any(Function));
@@ -151,5 +152,49 @@ describe('Database Connection Module', () => {
     mockPool.end.mockResolvedValueOnce();
     await db.closePool();
     expect(mockPool.end).toHaveBeenCalled();
+  });
+
+  test('pool size is 15 for Vercel Hobby (Supabase Free)', async () => {
+    jest.resetModules();
+    process.env.VERCEL = 'true';
+    delete process.env.SUPABASE_PRO;
+    const dbVercel = await import('../db.js');
+    dbVercel.initializePool();
+    
+    expect(MockPool).toHaveBeenCalledWith(
+      expect.objectContaining({
+        max: 15, // Vercel Hobby + Supabase Free
+      })
+    );
+    await dbVercel.closePool();
+  });
+
+  test('pool size is 50 for Vercel Pro (Supabase Pro)', async () => {
+    jest.resetModules();
+    process.env.VERCEL = 'true';
+    process.env.SUPABASE_PRO = 'true';
+    const dbVercel = await import('../db.js');
+    dbVercel.initializePool();
+    
+    expect(MockPool).toHaveBeenCalledWith(
+      expect.objectContaining({
+        max: 50, // Vercel Pro + Supabase Pro
+      })
+    );
+    await dbVercel.closePool();
+  });
+
+  test('pool size is 20 for local development', async () => {
+    jest.resetModules();
+    delete process.env.VERCEL;
+    const dbLocal = await import('../db.js');
+    dbLocal.initializePool();
+    
+    expect(MockPool).toHaveBeenCalledWith(
+      expect.objectContaining({
+        max: 20, // Local development
+      })
+    );
+    await dbLocal.closePool();
   });
 });

@@ -12,7 +12,7 @@ import bookmarkRoutes from './routes/bookmarkRoutes.js';
 import competitionRoutes from './routes/competitionRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import { ensureCsrfToken } from './middleware/csrf.js';
-import { helmetConfig, apiLimiter } from './middleware/security.js';
+import { helmetConfig } from './middleware/security.js';
 import logger from './utils/logger.js';
 import {
   getDatabaseStatus,
@@ -122,10 +122,10 @@ export function createApp() {
   apiRouter.use('/admin', requireDatabase, adminRoutes);
   apiRouter.use('/users', requireDatabase, userRoutes);
 
-  // Rate limiting for all API routes
-  app.use('/api', apiLimiter, apiRouter);
+  // API routes - rate limiting removed for ZERO CONSTRAINTS
+  app.use('/api', apiRouter);
   if (process.env.VERCEL) {
-    app.use('/', apiLimiter, apiRouter);
+    app.use('/', apiRouter);
   }
 
   // Serve static frontend files in production

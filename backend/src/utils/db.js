@@ -19,20 +19,27 @@ for (const envPath of [
 }
 
 const { Pool } = pg;
-const DEFAULT_POOL_SIZE = process.env.VERCEL ? '5' : '20';
+// MAXIMIZED pool size within Vercel/Supabase limits
+// Vercel Hobby + Supabase Free: 15 connections (60-70% of ~15-25 limit)
+// Vercel Pro + Supabase Pro: 50 connections (60-70% of ~100 limit)
+// Local Development: 20 connections (reasonable for local testing)
+const DEFAULT_POOL_SIZE = process.env.VERCEL 
+  ? (process.env.SUPABASE_PRO === 'true' ? '50' : '15') 
+  : '20';
 
 /**
  * Database connection configuration
  */
 const dbConfig = {
   connectionString: process.env.DATABASE_URL,
-  // Connection pool settings
+  // Connection pool settings - MAXIMIZED within platform limits
   max: parseInt(process.env.DB_POOL_SIZE || DEFAULT_POOL_SIZE, 10), // Maximum number of clients in the pool
-  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 10000, // Return an error after 10 seconds if connection cannot be established
-  // Retry settings
-  maxRetries: parseInt(process.env.SYNC_RETRIES || '3', 10),
-  retryDelay: 1000, // Initial retry delay in milliseconds
+  idleTimeoutMillis: 60000, // Close idle clients after 60 seconds (increased from 30s)
+  connectionTimeoutMillis: 30000, // Return an error after 30 seconds if connection cannot be established (increased from 10s)
+  statement_timeout: 30000, // Prevent query timeouts - 30 seconds
+  // Retry settings - MAXIMIZED for better resilience
+  maxRetries: parseInt(process.env.SYNC_RETRIES || '5', 10), // Increased from 3 to 5 retries
+  retryDelay: 2000, // Initial retry delay in milliseconds (increased from 1s to 2s)
 };
 
 /**
@@ -65,6 +72,7 @@ export function initializePool() {
     max: dbConfig.max,
     idleTimeoutMillis: dbConfig.idleTimeoutMillis,
     connectionTimeoutMillis: dbConfig.connectionTimeoutMillis,
+    statement_timeout: dbConfig.statement_timeout,
   });
 
   // Handle pool errors
@@ -124,8 +132,11 @@ export async function query(text, params = [], retryCount = 0) {
   } catch (error) {
     console.error('Database query error', {
       error: error.message,
+      errorCode: error.code,
+      errorStack: error.stack,
       query: text.substring(0, 100),
       retryCount,
+      maxRetries: dbConfig.maxRetries,
     });
 
     // Retry logic for connection errors
@@ -133,7 +144,14 @@ export async function query(text, params = [], retryCount = 0) {
       await resetBrokenPool();
       const delay = calculateRetryDelay(retryCount);
       console.log(
-        `Retrying query in ${delay}ms (attempt ${retryCount + 1}/${dbConfig.maxRetries})`
+        `Retrying query in ${delay}ms (attempt ${retryCount + 1}/${dbConfig.maxRetries})`,
+        {
+          errorCode: error.code,
+          errorMessage: error.message,
+          retryDelay: delay,
+          nextAttempt: retryCount + 1,
+          totalAttempts: dbConfig.maxRetries,
+        }
       );
 
       await sleep(delay);
@@ -266,6 +284,9 @@ function shouldRetry(error) {
     'ECONNRESET', // Connection reset
     'EPIPE', // Broken pipe
     'EAI_AGAIN', // DNS lookup timeout
+    'ECONNABORTED', // Connection aborted
+    'ENETUNREACH', // Network unreachable
+    'EHOSTUNREACH', // Host unreachable
   ];
 
   return (
