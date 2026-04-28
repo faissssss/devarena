@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-import { authApi, unwrapError, userApi } from '../services/api';
+import { authApi, primeCsrfToken, unwrapError, userApi } from '../services/api';
 import { decodeJwt, isTokenExpired } from '../utils/auth';
 
 const AuthContext = createContext(null);
@@ -108,6 +108,8 @@ export function AuthProvider({ children }) {
       async login(credentials) {
         setLoading(true);
         try {
+          // Prime CSRF token before first POST request to ensure cookie exists
+          await primeCsrfToken();
           const response = await authApi.login(credentials);
           localStorage.setItem('devarena_token', response.token);
           localStorage.setItem('devarena_user', JSON.stringify(response.user));
@@ -122,6 +124,8 @@ export function AuthProvider({ children }) {
       async register(payload) {
         setLoading(true);
         try {
+          // Prime CSRF token before first POST request to ensure cookie exists
+          await primeCsrfToken();
           return await authApi.register(payload);
         } catch (error) {
           throw new Error(unwrapError(error, 'Registration failed'));

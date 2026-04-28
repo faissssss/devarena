@@ -104,22 +104,24 @@ describe('server vercel routing', () => {
     appModule = await import('../server.js');
   });
 
-  test('serves competitions on the root-mounted vercel function path', async () => {
-    const response = await request(appModule.createApp()).get('/competitions');
+  test('serves competitions on /api prefix for deterministic routing', async () => {
+    const response = await request(appModule.createApp()).get('/api/competitions');
 
     expect(response.status).toBe(200);
     expect(response.body.competitions).toHaveLength(1);
     expect(response.body.competitions[0].id).toBe('comp-1');
   });
 
-  test('still serves competitions on the /api-prefixed local path', async () => {
-    const response = await request(appModule.createApp()).get('/api/competitions');
+  test('returns json 404 for unknown /api routes (not platform 404)', async () => {
+    const response = await request(appModule.createApp()).get('/api/unknown-route');
 
-    expect(response.status).toBe(200);
-    expect(response.body.competitions).toHaveLength(1);
+    expect(response.status).toBe(404);
+    expect(response.headers['content-type']).toMatch(/application\/json/);
+    expect(response.body.error.code).toBe('NOT_FOUND');
+    expect(response.body.error.message).toBe('Route not found');
   });
 
-  test('returns json 404 for unknown vercel function routes', async () => {
+  test('returns json 404 for root-level unknown routes', async () => {
     const response = await request(appModule.createApp()).get('/missing-route');
 
     expect(response.status).toBe(404);

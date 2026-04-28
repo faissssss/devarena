@@ -54,7 +54,7 @@ async function checkConnection() {
 async function verifyTables() {
   console.log('\n2. Verifying required tables...');
   
-  const requiredTables = ['users', 'competitions', 'bookmarks', 'sync_logs', 'oauth_accounts'];
+  const requiredTables = ['users', 'competitions', 'bookmarks', 'sync_logs', 'user_oauth_accounts'];
   const results = [];
   
   for (const table of requiredTables) {
@@ -191,7 +191,7 @@ async function checkIndexes() {
         indexdef 
       FROM pg_indexes 
       WHERE schemaname = 'public' 
-      AND tablename IN ('users', 'competitions', 'bookmarks', 'sync_logs', 'oauth_accounts')
+      AND tablename IN ('users', 'competitions', 'bookmarks', 'sync_logs', 'user_oauth_accounts')
       ORDER BY tablename, indexname
     `);
     

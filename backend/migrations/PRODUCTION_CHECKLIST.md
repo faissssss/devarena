@@ -68,7 +68,7 @@ This will check:
    - [ ] `competitions`
    - [ ] `bookmarks`
    - [ ] `sync_logs`
-   - [ ] `oauth_accounts`
+   - [ ] `user_oauth_accounts`
 
 ### Check Data
 

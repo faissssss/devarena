@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import CompetitionCard from '../components/CompetitionCard';
 import DatePicker from '../components/DatePicker';
+import DegradedDataWarning from '../components/DegradedDataWarning';
 import PlatformMultiSelect from '../components/PlatformMultiSelect';
 import { useAuth } from '../context/AuthContext';
 import { bookmarkApi, competitionApi, unwrapError } from '../services/api';
@@ -178,6 +179,8 @@ export default function ExplorePage() {
   const [error, setError] = useState('');
   const [showFilters, setShowFilters] = useState(true);
   const [isDateOpen, setIsDateOpen] = useState(false);
+  const [dataSource, setDataSource] = useState('database');
+  const [warningMessage, setWarningMessage] = useState('');
 
   const hasActiveFilters = Boolean(
     filters.category ||
@@ -261,6 +264,8 @@ export default function ExplorePage() {
         if (cancelled) return;
 
         setData(compRes);
+        setDataSource(compRes.dataSource || 'database');
+        setWarningMessage(compRes.warning || '');
         setBookmarks(Object.fromEntries((bmRes.bookmarks || []).map((b) => [b.competition_id, b.id])));
       } catch (err) {
         if (!cancelled) setError(unwrapError(err, 'Unable to load competitions'));
@@ -486,6 +491,9 @@ export default function ExplorePage() {
         >
           Tap a chip again to go back to the full competition list.
         </p>
+
+        {/* Degraded Data Warning */}
+        {dataSource === 'live-fallback' && <DegradedDataWarning message={warningMessage} />}
 
         {error && (
           <p

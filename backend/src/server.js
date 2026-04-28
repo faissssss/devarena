@@ -122,11 +122,10 @@ export function createApp() {
   apiRouter.use('/admin', requireDatabase, adminRoutes);
   apiRouter.use('/users', requireDatabase, userRoutes);
 
-  // API routes - rate limiting removed for ZERO CONSTRAINTS
+  // API routes - single mounting for deterministic routing
+  // All API requests route through /api prefix only (not root)
+  // This ensures deterministic routing through api/[...path].js on Vercel
   app.use('/api', apiRouter);
-  if (process.env.VERCEL) {
-    app.use('/', apiRouter);
-  }
 
   // Serve static frontend files in production
   if (process.env.NODE_ENV === 'production' && !process.env.VERCEL) {

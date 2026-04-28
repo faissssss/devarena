@@ -1,11 +1,14 @@
 import app from '../backend/api/index.js';
 
 // Comprehensive logging for Vercel serverless function diagnostics
+// This is the single entrypoint for all /api/* requests on Vercel
+// Explicit routing through this function ensures deterministic API behavior
 export default async function handler(req, res) {
   const startTime = Date.now();
   
   // Log incoming request details
   console.log('=== Vercel Serverless Function Invoked ===');
+  console.log('[API ROUTING] Catch-all function handling request');
   console.log(`Timestamp: ${new Date().toISOString()}`);
   console.log(`Method: ${req.method}`);
   console.log(`Path: ${req.url}`);

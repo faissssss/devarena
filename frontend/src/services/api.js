@@ -11,6 +11,17 @@ function getCsrfToken() {
   return match ? match[1] : null;
 }
 
+// Prime CSRF token by making a GET request to ensure the cookie exists
+// This is necessary for fresh sessions before the first POST request
+export async function primeCsrfToken() {
+  try {
+    await api.get('/health');
+  } catch (error) {
+    // Ignore errors from health endpoint - we only care about getting the cookie
+    console.warn('[API] Failed to prime CSRF token:', error.message);
+  }
+}
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('devarena_token');
   if (token) {

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import CompetitionCard from '../components/CompetitionCard';
+import DegradedDataWarning from '../components/DegradedDataWarning';
 import { useAuth } from '../context/AuthContext';
 import { bookmarkApi, competitionApi, unwrapError } from '../services/api';
 
@@ -14,6 +15,8 @@ export default function HomePage() {
   const [bookmarks, setBookmarks] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [dataSource, setDataSource] = useState('database');
+  const [warningMessage, setWarningMessage] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -51,6 +54,12 @@ export default function HomePage() {
         setFeatured(featuredComps.slice(0, 10));
         setNewest(newestRes.competitions || []);
         setPopular(withPrizes);
+        
+        // Track data source from any response
+        const source = ongoingRes.dataSource || upcomingRes.dataSource || newestRes.dataSource || allRes.dataSource || 'database';
+        const warning = ongoingRes.warning || upcomingRes.warning || newestRes.warning || allRes.warning || '';
+        setDataSource(source);
+        setWarningMessage(warning);
         
         if (isAuthenticated) {
           let bmRes = { bookmarks: [] };
@@ -252,6 +261,9 @@ export default function HomePage() {
           {error}
         </p>
       )}
+
+      {/* Degraded Data Warning */}
+      {dataSource === 'live-fallback' && <DegradedDataWarning message={warningMessage} />}
 
       {/* Featured Section */}
       <HorizontalScrollSection 

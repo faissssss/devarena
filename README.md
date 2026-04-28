@@ -130,15 +130,30 @@ vercel --prod
 
 **Environment Variables Required:**
 - `DATABASE_URL` - PostgreSQL connection string (use Supabase/Neon/Railway)
+  - **IMPORTANT**: For Vercel/serverless, use Supabase pooler URL: `postgresql://...@aws-0-us-west-1.pooler.supabase.com:6543/postgres`
+  - Direct URL format causes connection exhaustion in serverless environments
 - `JWT_SECRET` - Generate with: `openssl rand -hex 32`
 - `CLIST_API_KEY` - Get from [clist.by](https://clist.by/)
-- `CORS_ORIGIN` - Your Vercel domain
+- `CORS_ORIGIN` - Your Vercel domain (e.g., `https://your-app.vercel.app`)
+- `APP_URL` - Your Vercel domain (e.g., `https://your-app.vercel.app`)
+- `API_URL` - Your Vercel domain (e.g., `https://your-app.vercel.app`)
+- `GOOGLE_CLIENT_ID` - From Google Cloud Console
+- `GOOGLE_CLIENT_SECRET` - From Google Cloud Console
+- `GITHUB_CLIENT_ID` - From GitHub Developer Settings
+- `GITHUB_CLIENT_SECRET` - From GitHub Developer Settings
 - `NODE_ENV=production`
 
+**OAuth Configuration:**
+- Google Console: Set redirect URI to `https://your-app.vercel.app/api/auth/oauth/google/callback`
+- GitHub Settings: Set callback URL to `https://your-app.vercel.app/api/auth/oauth/github/callback`
+
 **Database Options for Production:**
-- [Supabase](https://supabase.com) - Recommended, free tier available
+- [Supabase](https://supabase.com) - Recommended, free tier available (use pooler URL for serverless)
 - [Neon.tech](https://neon.tech) - Serverless PostgreSQL
 - [Railway](https://railway.app) - Simple setup
+
+**Detailed Deployment Guide:**
+See [.kiro/specs/vercel-stabilization/DEPLOYMENT_GUIDE.md](.kiro/specs/vercel-stabilization/DEPLOYMENT_GUIDE.md) for comprehensive deployment instructions, configuration requirements, and troubleshooting.
 
 ### Other Deployment Options
 

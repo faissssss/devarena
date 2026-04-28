@@ -55,44 +55,83 @@ function getForwardedProto(req) {
 }
 
 function getRequestOrigin(req) {
+  // Prioritize x-forwarded-host and x-forwarded-proto headers for Vercel production
+  const forwardedHost = req.get('x-forwarded-host');
+  const forwardedProto = req.get('x-forwarded-proto');
+  
+  // Debug logging for origin detection
+  console.log('[OAuth Debug] Origin detection:', {
+    'x-forwarded-host': forwardedHost,
+    'x-forwarded-proto': forwardedProto,
+    'host': req.get('host'),
+    'protocol': req.protocol
+  });
+  
+  // Use forwarded headers directly when available (Vercel production)
+  if (forwardedHost && forwardedProto) {
+    const origin = `${forwardedProto.split(',')[0].trim()}://${forwardedHost.split(',')[0].trim()}`;
+    console.log('[OAuth Debug] Using forwarded headers, origin:', origin);
+    return origin;
+  }
+  
+  // Fall back to process.env.APP_URL if headers are missing
+  if (process.env.APP_URL) {
+    console.log('[OAuth Debug] Using APP_URL fallback:', process.env.APP_URL);
+    return normalizeBaseUrl(process.env.APP_URL);
+  }
+  
+  // Last resort: construct from host header
   const host = getForwardedHost(req);
   if (!host) {
+    console.log('[OAuth Debug] No host available, returning null');
     return null;
   }
-
+  
   const proto = getForwardedProto(req) || 'https';
-  return `${proto}://${host}`;
-}
-
-function isLocalhostHost(host) {
-  const normalizedHost = String(host || '').trim().toLowerCase();
-  return normalizedHost.startsWith('localhost') || normalizedHost.startsWith('127.0.0.1');
+  const origin = `${proto}://${host}`;
+  console.log('[OAuth Debug] Using host header fallback, origin:', origin);
+  return origin;
 }
 
 function getAppUrl(req) {
-  const requestHost = getForwardedHost(req);
+  // Get the request origin (prioritizes x-forwarded headers)
+  const requestOrigin = normalizeBaseUrl(getRequestOrigin(req));
+  
+  // Use request origin if available
+  if (requestOrigin) {
+    return requestOrigin;
+  }
+  
+  // Fall back to configured APP_URL or CORS_ORIGIN
   const configuredAppUrl = normalizeBaseUrl(
     process.env.APP_URL || process.env.CORS_ORIGIN || 'http://localhost:5173'
   );
-  const requestOrigin = normalizeBaseUrl(getRequestOrigin(req));
-
-  if (requestOrigin && !isLocalhostHost(requestHost)) {
-    return requestOrigin;
-  }
-
-  if (configuredAppUrl) {
-    return configuredAppUrl;
-  }
-
-  return requestOrigin || 'http://localhost:5173';
+  
+  return configuredAppUrl;
 }
 
 function getApiUrl(req) {
-  return normalizeBaseUrl(getRequestOrigin(req) || process.env.API_URL || process.env.APP_URL || 'http://localhost:3000');
+  // For API URL, prioritize x-forwarded headers (Vercel), then API_URL env var (local dev)
+  const forwardedHost = req.get('x-forwarded-host');
+  const forwardedProto = req.get('x-forwarded-proto');
+  
+  // Use forwarded headers directly when available (Vercel production)
+  if (forwardedHost && forwardedProto) {
+    const origin = `${forwardedProto.split(',')[0].trim()}://${forwardedHost.split(',')[0].trim()}`;
+    console.log('[OAuth Debug] API URL from forwarded headers:', origin);
+    return normalizeBaseUrl(origin);
+  }
+  
+  // For local development, use API_URL (backend URL, not frontend APP_URL)
+  const apiUrl = normalizeBaseUrl(process.env.API_URL || process.env.APP_URL || 'http://localhost:3000');
+  console.log('[OAuth Debug] API URL:', apiUrl);
+  return apiUrl;
 }
 
 function getRedirectUri(req, provider) {
-  return `${getApiUrl(req)}/api/auth/oauth/${provider}/callback`;
+  const redirectUri = `${getApiUrl(req)}/api/auth/oauth/${provider}/callback`;
+  console.log('[OAuth Debug] Redirect URI for', provider, ':', redirectUri);
+  return redirectUri;
 }
 
 function getSafeNext(nextPath) {
@@ -215,48 +254,76 @@ async function handleOAuthCallback(req, res, provider) {
     return res.redirect(`${getAppUrl(req)}/auth/callback?${redirectParams.toString()}`);
   } catch (error) {
     // Log detailed error information for debugging
+    const redirectUri = getRedirectUri(req, provider);
     console.error(`OAuth callback error for ${provider}:`, {
       message: error.message,
       code: error.code,
       statusCode: error.statusCode,
+      redirectUri,
+      provider,
       stack: error.stack,
     });
 
     // Provide context-specific error messages
     let message;
+    let errorCode = 'OAUTH_ERROR';
+    
     if (error instanceof AuthServiceError) {
       // Use the detailed error message from AuthServiceError
       message = error.message;
+      errorCode = error.code || 'OAUTH_ERROR';
       
       // Add additional context for specific error types
       if (error.code === 'OAUTH_EMAIL_REQUIRED') {
         message = `${provider === 'google' ? 'Google' : 'GitHub'} did not provide an email address. Please ensure your ${provider === 'google' ? 'Google' : 'GitHub'} account has a verified email.`;
+        errorCode = 'OAUTH_EMAIL_REQUIRED';
       } else if (error.code?.includes('CONNECTION_REFUSED')) {
         message = `Unable to connect to ${provider === 'google' ? 'Google' : 'GitHub'}. Please try again later.`;
+        errorCode = 'OAUTH_CONNECTION_REFUSED';
       } else if (error.code?.includes('TIMEOUT')) {
         message = `Connection to ${provider === 'google' ? 'Google' : 'GitHub'} timed out. Please check your internet connection and try again.`;
+        errorCode = 'OAUTH_TIMEOUT';
       } else if (error.code?.includes('DNS_ERROR')) {
         message = `Unable to reach ${provider === 'google' ? 'Google' : 'GitHub'} services. Please check your internet connection and try again.`;
+        errorCode = 'OAUTH_DNS_ERROR';
       } else if (error.code?.includes('TOKEN_EXCHANGE_FAILED')) {
         message = `${provider === 'google' ? 'Google' : 'GitHub'} authentication failed. Please try signing in again.`;
+        errorCode = 'OAUTH_TOKEN_EXCHANGE_FAILED';
       } else if (error.code?.includes('API_ERROR')) {
         message = `${provider === 'google' ? 'Google' : 'GitHub'} authentication failed. Please try again.`;
+        errorCode = 'OAUTH_API_ERROR';
       } else if (error.code?.includes('NETWORK_ERROR')) {
         message = `Network error during ${provider === 'google' ? 'Google' : 'GitHub'} authentication. Please check your connection and try again.`;
+        errorCode = 'OAUTH_NETWORK_ERROR';
       }
+    } else if (error.statusCode === 404 || error.code === 'ENOTFOUND') {
+      // Platform 404 or DNS resolution failure
+      message = `OAuth callback endpoint not found. This may be a platform routing issue. Redirect URI: ${redirectUri}`;
+      errorCode = 'OAUTH_PLATFORM_404';
     } else if (error.code === '23505') {
       // Database constraint violation during user creation
       message = 'Unable to create account. This email or username may already be in use.';
+      errorCode = 'OAUTH_DUPLICATE_ACCOUNT';
     } else if (error.name === 'DatabaseError' || error.code?.startsWith('23')) {
       // Other database errors during user creation
       message = 'Unable to create your account. Please try again later.';
+      errorCode = 'OAUTH_DATABASE_ERROR';
+    } else if (error.message?.includes('CSRF') || error.message?.includes('state')) {
+      // CSRF/state validation failure
+      message = 'OAuth state validation failed. This may be a CSRF protection issue. Please try signing in again.';
+      errorCode = 'OAUTH_CSRF_FAILURE';
+    } else if (error.message?.includes('redirect_uri_mismatch')) {
+      // Provider config failure - redirect URI mismatch
+      message = `OAuth redirect URI mismatch. Expected: ${redirectUri}. Please verify OAuth provider configuration.`;
+      errorCode = 'OAUTH_REDIRECT_URI_MISMATCH';
     } else {
       // Generic fallback with provider context
       message = `${provider === 'google' ? 'Google' : 'GitHub'} sign-in failed. Please try again.`;
+      errorCode = 'OAUTH_UNKNOWN_ERROR';
     }
 
     return res.redirect(
-      `${getAppUrl(req)}/auth/callback?error=${encodeURIComponent(message)}`
+      `${getAppUrl(req)}/auth/callback?error=${encodeURIComponent(message)}&code=${errorCode}`
     );
   }
 }
@@ -327,14 +394,36 @@ router.get('/oauth/:provider', async (req, res) => {
     const cookieName = `devarena_oauth_state_${provider}`;
 
     res.setHeader('Set-Cookie', serializeCookie(req, cookieName, `${state}|${nextPath}`));
-    return res.redirect(buildProviderAuthUrl(provider, req, state));
+    
+    const authUrl = buildProviderAuthUrl(provider, req, state);
+    console.log('[OAuth Debug] Redirecting to provider auth URL:', authUrl);
+    
+    return res.redirect(authUrl);
   } catch (error) {
-    const message = error instanceof AuthServiceError
-      ? error.message
-      : `Unable to start ${provider} sign-in`;
+    console.error(`OAuth initiation error for ${provider}:`, {
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
+    });
+    
+    let message;
+    let errorCode = 'OAUTH_INIT_ERROR';
+    
+    if (error instanceof AuthServiceError) {
+      message = error.message;
+      errorCode = error.code || 'OAUTH_INIT_ERROR';
+      
+      // Specific error for missing OAuth configuration
+      if (error.code === 'GOOGLE_OAUTH_NOT_CONFIGURED' || error.code === 'GITHUB_OAUTH_NOT_CONFIGURED') {
+        message = `${provider === 'google' ? 'Google' : 'GitHub'} OAuth is not configured. Please contact support.`;
+        errorCode = 'OAUTH_PROVIDER_NOT_CONFIGURED';
+      }
+    } else {
+      message = `Unable to start ${provider} sign-in. Please try again.`;
+    }
 
     return res.redirect(
-      `${getAppUrl(req)}/auth/callback?error=${encodeURIComponent(message)}`
+      `${getAppUrl(req)}/auth/callback?error=${encodeURIComponent(message)}&code=${errorCode}`
     );
   }
 });

@@ -138,7 +138,7 @@ Verifying database schema...
    - `competitions`
    - `bookmarks`
    - `sync_logs`
-   - `oauth_accounts`
+   - `user_oauth_accounts`
 
 ## Step 4: Verify Data Exists
 
@@ -236,7 +236,7 @@ Ensure all required environment variables are set in Vercel:
 If you need to re-run migrations (e.g., after schema changes):
 1. Drop existing tables in Supabase SQL Editor:
    ```sql
-   DROP TABLE IF EXISTS oauth_accounts CASCADE;
+   DROP TABLE IF EXISTS user_oauth_accounts CASCADE;
    DROP TABLE IF EXISTS bookmarks CASCADE;
    DROP TABLE IF EXISTS sync_logs CASCADE;
    DROP TABLE IF EXISTS competitions CASCADE;
@@ -276,7 +276,7 @@ If you need to re-run migrations (e.g., after schema changes):
 
 After completing migrations, verify:
 
-- [ ] All 5 tables exist in Supabase: `users`, `competitions`, `bookmarks`, `sync_logs`, `oauth_accounts`
+- [ ] All 5 tables exist in Supabase: `users`, `competitions`, `bookmarks`, `sync_logs`, `user_oauth_accounts`
 - [ ] Competitions table has data (519 records expected after sync)
 - [ ] Connection pooling is enabled in Supabase
 - [ ] `DATABASE_URL` is set correctly in Vercel environment variables

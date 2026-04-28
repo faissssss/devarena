@@ -54,6 +54,18 @@ export function isDatabaseConfigured() {
 
 /**
  * Initialize the database connection pool
+ * 
+ * IMPORTANT: Supabase Pooler URL Requirement for Serverless
+ * --------------------------------------------------------
+ * When deploying to serverless environments (e.g., Vercel), you MUST use
+ * Supabase's connection pooler URL instead of the direct database URL.
+ * 
+ * Direct URL format:  db.<project-ref>.supabase.co:5432
+ * Pooler URL format:  aws-0-<region>.pooler.supabase.com:6543
+ * 
+ * The pooler prevents connection exhaustion in serverless environments where
+ * each function invocation creates new connections.
+ * 
  * @returns {Pool} PostgreSQL connection pool
  */
 export function initializePool() {
@@ -65,6 +77,17 @@ export function initializePool() {
 
   if (pool) {
     return pool;
+  }
+
+  // Check for direct Supabase URL in Vercel environment
+  if (
+    process.env.VERCEL &&
+    process.env.DATABASE_URL.includes('db.') &&
+    process.env.DATABASE_URL.includes('.supabase.co:5432')
+  ) {
+    console.warn(
+      'WARNING: DATABASE_URL uses direct Supabase URL. Use pooler URL for serverless: aws-0-us-west-1.pooler.supabase.com:6543'
+    );
   }
 
   pool = new Pool({

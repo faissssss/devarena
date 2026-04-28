@@ -148,4 +148,69 @@ describe('auth routes integration', () => {
     expect(response.headers.location).toContain('https://accounts.google.com/o/oauth2/v2/auth?');
     expect(mockWarmupConnection).not.toHaveBeenCalled();
   });
+
+  test('OAuth redirect URI prioritizes x-forwarded headers over localhost', async () => {
+    // Test that x-forwarded-host and x-forwarded-proto are used for redirect URI construction
+    const response = await request(app)
+      .get('/auth/oauth/google?next=/explore')
+      .set('x-forwarded-proto', 'https')
+      .set('x-forwarded-host', 'devarena-rust.vercel.app')
+      .set('host', 'localhost:3000'); // Should be ignored in favor of x-forwarded-host
+
+    expect(response.status).toBe(302);
+    // Verify the redirect URI in the OAuth provider URL uses the Vercel production origin
+    expect(response.headers.location).toContain(
+      encodeURIComponent('https://devarena-rust.vercel.app/api/auth/oauth/google/callback')
+    );
+    // Should NOT contain localhost
+    expect(response.headers.location).not.toContain('localhost');
+  });
+
+  test('OAuth callback uses correct redirect URI with x-forwarded headers', async () => {
+    mockExchangeGoogleCode.mockResolvedValueOnce({
+      provider: 'google',
+      providerUserId: 'google-2',
+      email: 'test@example.com',
+      username: 'test-user',
+      avatarUrl: null,
+    });
+    mockLoginWithOAuth.mockResolvedValueOnce({
+      token: 'test-token',
+      user: { id: 'user-4', email: 'test@example.com', role: 'user' },
+    });
+
+    const response = await request(app)
+      .get('/auth/oauth/google/callback?code=test-code&state=state-456')
+      .set('x-forwarded-proto', 'https')
+      .set('x-forwarded-host', 'devarena-rust.vercel.app')
+      .set('Cookie', 'devarena_oauth_state_google=state-456%7C%2Fexplore');
+
+    expect(response.status).toBe(302);
+    // Verify exchangeGoogleCode was called with the correct redirect URI
+    expect(mockExchangeGoogleCode).toHaveBeenCalledWith(
+      'test-code',
+      'https://devarena-rust.vercel.app/api/auth/oauth/google/callback'
+    );
+    // Verify redirect back to frontend uses the same origin
+    expect(response.headers.location).toBe(
+      'https://devarena-rust.vercel.app/auth/callback?token=test-token&next=%2Fexplore'
+    );
+  });
+
+  test('OAuth error handling includes error code and detailed message', async () => {
+    mockExchangeGithubCode.mockRejectedValueOnce(
+      new Error('redirect_uri_mismatch: The redirect URI does not match')
+    );
+
+    const response = await request(app)
+      .get('/auth/oauth/github/callback?code=test-code&state=state-789')
+      .set('x-forwarded-proto', 'https')
+      .set('x-forwarded-host', 'devarena-rust.vercel.app')
+      .set('Cookie', 'devarena_oauth_state_github=state-789%7C%2Fhome');
+
+    expect(response.status).toBe(302);
+    // Verify error redirect includes error code
+    expect(response.headers.location).toContain('error=');
+    expect(response.headers.location).toContain('code=');
+  });
 });

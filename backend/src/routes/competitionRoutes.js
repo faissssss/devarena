@@ -33,11 +33,20 @@ router.get('/', async (req, res, next) => {
     
     try {
       const result = await executeFilter(filters);
-      return res.json(result);
+      // Add dataSource metadata for database response
+      return res.json({
+        ...result,
+        dataSource: 'database',
+      });
     } catch (dbError) {
       try {
         const liveResult = await listLiveCompetitions(filters);
-        return res.json(liveResult);
+        // Add degraded metadata for live fallback
+        return res.json({
+          ...liveResult,
+          dataSource: 'live-fallback',
+          warning: 'Database unavailable. Showing live data from CLIST/Kontests only (Kaggle competitions not included).',
+        });
       } catch (liveError) {
         console.error('Competition list fallback failed', {
           dbError: dbError.message,

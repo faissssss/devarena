@@ -121,7 +121,33 @@ export async function syncCLIST() {
 
 export async function syncKaggle() {
   try {
-    // Use Kaggle CLI to fetch competitions
+    // Check for serverless environment without HTTP API configuration
+    if (process.env.VERCEL && !process.env.KAGGLE_API_URL) {
+      const errorMessage = 'Kaggle sync not available in serverless (HTTP API not configured)';
+      await createSyncLog({
+        source: 'kaggle',
+        status: 'error',
+        errorMessage,
+      });
+      return { source: 'kaggle', success: false, error: errorMessage, processed: 0 };
+    }
+
+    // Use HTTP API if configured
+    if (process.env.KAGGLE_API_URL) {
+      return runSync({
+        source: 'kaggle',
+        request: () => axios.get(process.env.KAGGLE_API_URL, {
+          timeout: getTimeout(),
+          auth: process.env.KAGGLE_USERNAME && process.env.KAGGLE_API_KEY ? {
+            username: process.env.KAGGLE_USERNAME,
+            password: process.env.KAGGLE_API_KEY,
+          } : undefined,
+        }),
+        parser: parseKaggleResponse,
+      });
+    }
+
+    // Fallback to CLI for local development (non-Vercel environments)
     const { exec } = await import('child_process');
     const { promisify } = await import('util');
     const execAsync = promisify(exec);

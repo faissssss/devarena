@@ -11,8 +11,11 @@ export function generateCsrfToken() {
 }
 
 export function setCsrfCookie(res, token) {
+  // Double-submit cookie pattern requires the cookie to be readable by the client
+  // The client reads this cookie and sends it back in the X-CSRF-Token header
+  // Security is maintained through SameSite=strict and Secure flag in production
   res.cookie(CSRF_COOKIE_NAME, token, {
-    httpOnly: true,
+    httpOnly: false, // Must be false for double-submit pattern
     sameSite: 'strict',
     secure: process.env.NODE_ENV === 'production',
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
@@ -28,11 +31,30 @@ export function validateCsrfToken(req, res, next) {
   const cookieToken = req.cookies?.[CSRF_COOKIE_NAME];
   const headerToken = req.headers[CSRF_HEADER_NAME];
 
-  if (!cookieToken || !headerToken || cookieToken !== headerToken) {
+  // Provide specific error messages for different failure scenarios
+  if (!cookieToken) {
     return res.status(403).json({
       error: {
-        code: 'CSRF_TOKEN_INVALID',
-        message: 'Invalid or missing CSRF token',
+        code: 'CSRF_COOKIE_MISSING',
+        message: 'CSRF cookie not found. Please refresh the page and try again.',
+      },
+    });
+  }
+
+  if (!headerToken) {
+    return res.status(403).json({
+      error: {
+        code: 'CSRF_HEADER_MISSING',
+        message: 'CSRF token header not provided.',
+      },
+    });
+  }
+
+  if (cookieToken !== headerToken) {
+    return res.status(403).json({
+      error: {
+        code: 'CSRF_TOKEN_MISMATCH',
+        message: 'CSRF token mismatch. Please refresh the page and try again.',
       },
     });
   }
