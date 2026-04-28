@@ -7,7 +7,7 @@
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
     "build": "cd frontend && npm run build",
-    "vercel-build": "cd backend && npm install && cd ../frontend && npm install && npm run build",
+    "vercel-build": "cd backend && npm install --production=false && cd ../frontend && npm install --production=false && npm run build",
     "start": "cd backend && node src/server.js",
     "start:prod": "cd backend && NODE_ENV=production node src/server.js",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
