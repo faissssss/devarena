@@ -381,8 +381,15 @@ router.post(
 );
 
 router.get('/oauth/:provider', async (req, res) => {
+  console.log('[OAuth Debug] OAuth initiation route hit');
+  console.log('[OAuth Debug] Provider param:', req.params.provider);
+  console.log('[OAuth Debug] Query params:', req.query);
+  console.log('[OAuth Debug] Full URL:', req.url);
+  console.log('[OAuth Debug] Full path:', req.path);
+  
   const provider = String(req.params.provider || '').toLowerCase();
   if (!['google', 'github'].includes(provider)) {
+    console.log('[OAuth Debug] Invalid provider:', provider);
     return res.status(400).json({
       error: { code: 'INVALID_PROVIDER', message: 'Unsupported OAuth provider' },
     });

@@ -126,6 +126,15 @@ export function createApp() {
   // All API requests route through /api prefix only (not root)
   // This ensures deterministic routing through api/[...path].js on Vercel
   app.use('/api', apiRouter);
+  
+  // Log registered routes for debugging
+  console.log('[Server] Registered API routes:');
+  console.log('  /api/health');
+  console.log('  /api/auth/* (including /api/auth/oauth/:provider)');
+  console.log('  /api/competitions/*');
+  console.log('  /api/bookmarks/*');
+  console.log('  /api/admin/*');
+  console.log('  /api/users/*');
 
   // Serve static frontend files in production
   if (process.env.NODE_ENV === 'production' && !process.env.VERCEL) {
