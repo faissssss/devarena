@@ -1,9 +1,9 @@
 import app from '../backend/api/index.js';
 
 // Comprehensive logging for Vercel serverless function diagnostics
-// This is the single entrypoint for all /api/* requests on Vercel
-// Explicit routing through this function ensures deterministic API behavior
-export default async function handler(req, res) {
+// Shared handler for the root /api endpoint and the catch-all /api/* endpoint.
+// Vercel requires a dedicated catch-all file (api/[...path].js) for nested API routes.
+export async function handler(req, res) {
   const startTime = Date.now();
   
   // Log incoming request details
@@ -118,3 +118,5 @@ export default async function handler(req, res) {
     }
   }
 }
+
+export default handler;
