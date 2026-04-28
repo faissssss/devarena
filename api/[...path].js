@@ -11,7 +11,8 @@ export default async function handler(req, res) {
   console.log('[API ROUTING] Catch-all function handling request');
   console.log(`Timestamp: ${new Date().toISOString()}`);
   console.log(`Method: ${req.method}`);
-  console.log(`Path: ${req.url}`);
+  console.log(`Original URL: ${req.url}`);
+  console.log(`Original Path: ${req.path || 'N/A'}`);
   console.log(`Headers:`, JSON.stringify({
     host: req.headers.host,
     'user-agent': req.headers['user-agent'],
@@ -19,6 +20,8 @@ export default async function handler(req, res) {
     origin: req.headers.origin,
     referer: req.headers.referer,
     cookie: req.headers.cookie ? '[PRESENT]' : '[ABSENT]',
+    'x-forwarded-host': req.headers['x-forwarded-host'],
+    'x-forwarded-proto': req.headers['x-forwarded-proto'],
   }, null, 2));
   
   // Log environment variables (without sensitive values)
@@ -38,6 +41,15 @@ export default async function handler(req, res) {
   try {
     // Log database connection attempt
     console.log('Attempting to handle request with Express app...');
+    
+    // CRITICAL FIX: Vercel strips /api prefix in the rewrite, but Express app expects it
+    // The rewrite "/api/:path*" -> "/api/[...path]" means the function receives the path WITHOUT /api
+    // But our Express app has routes mounted at /api, so we need to prepend it back
+    // Example: Request to /api/auth/oauth/google -> Function receives /auth/oauth/google -> Need to restore to /api/auth/oauth/google
+    if (!req.url.startsWith('/api')) {
+      console.log(`[API ROUTING] Prepending /api to URL: ${req.url} -> /api${req.url}`);
+      req.url = `/api${req.url}`;
+    }
     
     // Call the Express app
     await new Promise((resolve, reject) => {
