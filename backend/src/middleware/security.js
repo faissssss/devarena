@@ -1,6 +1,5 @@
 import helmet from 'helmet';
-// Rate limiting removed - ZERO CONSTRAINTS for Vercel deployment
-// import rateLimit from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
 
 /**
  * Helmet.js configuration for security headers
@@ -13,7 +12,7 @@ export const helmetConfig = helmet({
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
       imgSrc: ["'self'", 'data:', 'https:'],
-      connectSrc: ["'self'"],
+      connectSrc: ["'self'", 'https://devarena.onrender.com'],
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
@@ -21,17 +20,50 @@ export const helmetConfig = helmet({
     }
   },
   crossOriginEmbedderPolicy: false, // Allow embedding for OAuth
-  crossOriginResourcePolicy: { policy: 'cross-origin' }
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  strictTransportSecurity: {
+    maxAge: 31536000, // 1 year in seconds
+    includeSubDomains: true,
+    preload: true
+  },
+  xFrameOptions: { action: 'deny' },
+  xContentTypeOptions: 'nosniff'
 });
 
 /**
- * RATE LIMITING COMPLETELY REMOVED
- * 
- * All rate limiting middleware has been removed to prevent blocking legitimate users
- * on Vercel production deployment. This ensures ZERO CONSTRAINTS on:
- * - API requests (previously limited to 100 requests per 15 minutes)
- * - Authentication requests (previously limited to 5 requests per 15 minutes)
- * - Sync requests (previously limited to 10 requests per hour)
- * 
- * Security headers (Helmet) continue to apply for protection.
+ * Rate limiting middleware for API protection
+ * Re-enabled for Render deployment (persistent container can handle it)
  */
+
+// General API rate limiter - 100 requests per 15 minutes
+export const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 100 requests per window per IP
+  message: {
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many requests, please try again later.'
+    }
+  },
+  standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
+  legacyHeaders: false, // Disable `X-RateLimit-*` headers
+  skip: (req) => {
+    // Skip rate limiting for health check endpoint
+    return req.path === '/health';
+  }
+});
+
+// Authentication rate limiter - 5 requests per 15 minutes (stricter)
+export const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 login attempts per window per IP
+  message: {
+    error: {
+      code: 'AUTH_RATE_LIMIT_EXCEEDED',
+      message: 'Too many authentication attempts, please try again later.'
+    }
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true // Don't count successful auth attempts
+});

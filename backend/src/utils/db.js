@@ -19,13 +19,9 @@ for (const envPath of [
 }
 
 const { Pool } = pg;
-// MAXIMIZED pool size within Vercel/Supabase limits
-// Vercel Hobby + Supabase Free: 15 connections (60-70% of ~15-25 limit)
-// Vercel Pro + Supabase Pro: 50 connections (60-70% of ~100 limit)
+// Railway container deployment: 20 connections (Railway PostgreSQL supports this)
 // Local Development: 20 connections (reasonable for local testing)
-const DEFAULT_POOL_SIZE = process.env.VERCEL 
-  ? (process.env.SUPABASE_PRO === 'true' ? '50' : '15') 
-  : '20';
+const DEFAULT_POOL_SIZE = '20';
 
 /**
  * Database connection configuration
@@ -55,16 +51,8 @@ export function isDatabaseConfigured() {
 /**
  * Initialize the database connection pool
  * 
- * IMPORTANT: Supabase Pooler URL Requirement for Serverless
- * --------------------------------------------------------
- * When deploying to serverless environments (e.g., Vercel), you MUST use
- * Supabase's connection pooler URL instead of the direct database URL.
- * 
- * Direct URL format:  db.<project-ref>.supabase.co:5432
- * Pooler URL format:  aws-0-<region>.pooler.supabase.com:6543
- * 
- * The pooler prevents connection exhaustion in serverless environments where
- * each function invocation creates new connections.
+ * Railway uses direct PostgreSQL connections with connection pooling
+ * configured in the application layer.
  * 
  * @returns {Pool} PostgreSQL connection pool
  */
@@ -77,17 +65,6 @@ export function initializePool() {
 
   if (pool) {
     return pool;
-  }
-
-  // Check for direct Supabase URL in Vercel environment
-  if (
-    process.env.VERCEL &&
-    process.env.DATABASE_URL.includes('db.') &&
-    process.env.DATABASE_URL.includes('.supabase.co:5432')
-  ) {
-    console.warn(
-      'WARNING: DATABASE_URL uses direct Supabase URL. Use pooler URL for serverless: aws-0-us-west-1.pooler.supabase.com:6543'
-    );
   }
 
   pool = new Pool({

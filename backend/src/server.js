@@ -12,7 +12,7 @@ import bookmarkRoutes from './routes/bookmarkRoutes.js';
 import competitionRoutes from './routes/competitionRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import { ensureCsrfToken } from './middleware/csrf.js';
-import { helmetConfig } from './middleware/security.js';
+import { helmetConfig, apiLimiter, authLimiter } from './middleware/security.js';
 import logger from './utils/logger.js';
 import {
   getDatabaseStatus,
@@ -73,9 +73,27 @@ export function createApp() {
           return;
         }
 
+        if (process.env.RENDER && /^https:\/\/.*\.onrender\.com$/i.test(origin)) {
+          callback(null, true);
+          return;
+        }
+
         callback(new Error('Origin not allowed by CORS'));
       },
       credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: [
+        'X-CSRF-Token',
+        'X-Requested-With',
+        'Accept',
+        'Accept-Version',
+        'Content-Length',
+        'Content-MD5',
+        'Content-Type',
+        'Date',
+        'X-Api-Version',
+        'Authorization'
+      ],
     })
   );
 
@@ -86,6 +104,12 @@ export function createApp() {
 
   // CSRF protection
   app.use(ensureCsrfToken);
+
+  // Apply general API rate limiting to all /api routes (except health check)
+  // Only apply in production on Render (not in development or Vercel)
+  if (process.env.NODE_ENV === 'production' && process.env.RENDER) {
+    app.use('/api', apiLimiter);
+  }
 
   const apiRouter = Router();
 

@@ -1,200 +1,248 @@
-import { beforeEach, describe, expect, jest, test } from '@jest/globals';
+import { jest } from '@jest/globals';
+
+// Mock pg module
+const mockQuery = jest.fn();
+const mockConnect = jest.fn();
+const mockEnd = jest.fn();
+const mockOn = jest.fn();
 
 const mockPool = {
-  query: jest.fn(),
-  connect: jest.fn(),
-  end: jest.fn(),
-  on: jest.fn(),
+  query: mockQuery,
+  connect: mockConnect,
+  end: mockEnd,
+  on: mockOn,
 };
-
-const MockPool = jest.fn(() => mockPool);
 
 jest.unstable_mockModule('pg', () => ({
   default: {
-    Pool: MockPool,
+    Pool: jest.fn(() => mockPool),
   },
+  Pool: jest.fn(() => mockPool),
 }));
 
-jest.unstable_mockModule('dotenv', () => ({
-  default: {
-    config: jest.fn(),
-  },
-}));
+// Import after mocking
+const { 
+  initializePool, 
+  getPool, 
+  query, 
+  closePool,
+  warmupConnection,
+  getDatabaseStatus,
+  isDatabaseConfigured 
+} = await import('../db.js');
 
-describe('Database Connection Module', () => {
-  let db;
-  beforeEach(async () => {
+describe('Database Connection Manager', () => {
+  beforeEach(() => {
     jest.clearAllMocks();
-    jest.resetModules();
-    process.env.DATABASE_URL =
-      'postgresql://user:password@localhost:5432/devarena_test';
-    process.env.SYNC_RETRIES = '5'; // Updated from 3 to 5
-    db = await import('../db.js');
+    // Reset environment
+    process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/testdb';
   });
 
   afterEach(async () => {
-    // Clean up
-    if (db.closePool) {
-      await db.closePool();
+    // Clean up pool between tests
+    try {
+      await closePool();
+    } catch (error) {
+      // Ignore cleanup errors
     }
   });
 
-  test('initializePool creates a configured pool', () => {
-    db.initializePool();
-
-    expect(MockPool).toHaveBeenCalledWith(
-      expect.objectContaining({
-        connectionString: process.env.DATABASE_URL,
-        max: 20, // Local development default
-        idleTimeoutMillis: 60000, // Increased from 30000 to 60000
-        connectionTimeoutMillis: 30000, // Increased from 10000 to 30000
-        statement_timeout: 30000, // Added to prevent query timeouts
-      })
-    );
-    expect(mockPool.on).toHaveBeenCalledWith('error', expect.any(Function));
-    expect(mockPool.on).toHaveBeenCalledWith('connect', expect.any(Function));
-    expect(mockPool.on).toHaveBeenCalledWith('remove', expect.any(Function));
-  });
-
-  test('initializePool throws when DATABASE_URL is missing', () => {
-    delete process.env.DATABASE_URL;
-    expect(() => db.initializePool()).toThrow(
-      'DATABASE_URL environment variable is required'
-    );
-  });
-
-  test('getPool reuses the initialized pool', () => {
-    const pool1 = db.getPool();
-    const pool2 = db.getPool();
-    expect(pool1).toBe(pool2);
-    expect(MockPool).toHaveBeenCalledTimes(1);
-  });
-
-  test('isDatabaseConfigured reflects DATABASE_URL presence', () => {
-    expect(db.isDatabaseConfigured()).toBe(true);
-    delete process.env.DATABASE_URL;
-    expect(db.isDatabaseConfigured()).toBe(false);
-  });
-
-  test('query executes successfully', async () => {
-    mockPool.query.mockResolvedValueOnce({ rows: [{ id: 1 }], rowCount: 1 });
-    const result = await db.query('SELECT * FROM users WHERE id = $1', [1]);
-    expect(result.rows[0].id).toBe(1);
-    expect(mockPool.query).toHaveBeenCalledWith(
-      'SELECT * FROM users WHERE id = $1',
-      [1]
-    );
-  });
-
-  test('query retries retryable errors', async () => {
-    const connectionError = new Error('Connection refused');
-    connectionError.code = 'ECONNREFUSED';
-    mockPool.query
-      .mockRejectedValueOnce(connectionError)
-      .mockResolvedValueOnce({ rows: [], rowCount: 0 });
-
-    await db.query('SELECT 1');
-    expect(mockPool.query).toHaveBeenCalledTimes(2);
-  });
-
-  test('query does not retry non-retryable errors', async () => {
-    const syntaxError = new Error('syntax error at or near "SELEC"');
-    syntaxError.code = '42601';
-    mockPool.query.mockRejectedValueOnce(syntaxError);
-
-    await expect(db.query('SELEC * FROM users')).rejects.toThrow('syntax error');
-    expect(mockPool.query).toHaveBeenCalledTimes(1);
-  });
-
-  test('getClient resolves a pool client', async () => {
-    const client = { query: jest.fn(), release: jest.fn() };
-    mockPool.connect.mockResolvedValueOnce(client);
-    await expect(db.getClient()).resolves.toBe(client);
-  });
-
-  test('testConnection returns true on success', async () => {
-    mockPool.query.mockResolvedValueOnce({
-      rows: [{ current_time: new Date().toISOString() }],
-      rowCount: 1,
+  describe('Connection Pool Initialization', () => {
+    test('should initialize pool with Railway settings', () => {
+      const pool = initializePool();
+      
+      expect(pool).toBeDefined();
+      expect(mockOn).toHaveBeenCalledWith('error', expect.any(Function));
+      expect(mockOn).toHaveBeenCalledWith('connect', expect.any(Function));
+      expect(mockOn).toHaveBeenCalledWith('remove', expect.any(Function));
     });
-    await expect(db.testConnection()).resolves.toBe(true);
+
+    test('should use 20 connections for Railway', () => {
+      const pg = require('pg');
+      initializePool();
+      
+      const poolConfig = pg.Pool.mock.calls[0][0];
+      expect(poolConfig.max).toBe(20);
+    });
+
+    test('should configure connection timeouts', () => {
+      const pg = require('pg');
+      initializePool();
+      
+      const poolConfig = pg.Pool.mock.calls[0][0];
+      expect(poolConfig.idleTimeoutMillis).toBe(60000);
+      expect(poolConfig.connectionTimeoutMillis).toBe(30000);
+      expect(poolConfig.statement_timeout).toBe(30000);
+    });
+
+    test('should throw error if DATABASE_URL not configured', () => {
+      delete process.env.DATABASE_URL;
+      
+      expect(() => initializePool()).toThrow('DATABASE_URL environment variable is required');
+    });
+
+    test('should return existing pool if already initialized', () => {
+      const pool1 = initializePool();
+      const pool2 = getPool();
+      
+      expect(pool1).toBe(pool2);
+    });
   });
 
-  test('testConnection returns false on failure', async () => {
-    const error = new Error('Connection refused');
-    error.code = 'ECONNREFUSED';
-    mockPool.query.mockRejectedValueOnce(error);
-    await expect(db.testConnection()).resolves.toBe(false);
+  describe('Retry Logic with Mock Connection Failures', () => {
+    test('should retry on ECONNREFUSED error', async () => {
+      const connectionError = new Error('Connection refused');
+      connectionError.code = 'ECONNREFUSED';
+      
+      mockQuery
+        .mockRejectedValueOnce(connectionError)
+        .mockRejectedValueOnce(connectionError)
+        .mockResolvedValueOnce({ rows: [{ result: 'success' }] });
+
+      const result = await query('SELECT 1');
+      
+      expect(result.rows[0].result).toBe('success');
+      expect(mockQuery).toHaveBeenCalledTimes(3);
+    });
+
+    test('should retry on ETIMEDOUT error', async () => {
+      const timeoutError = new Error('Connection timeout');
+      timeoutError.code = 'ETIMEDOUT';
+      
+      mockQuery
+        .mockRejectedValueOnce(timeoutError)
+        .mockResolvedValueOnce({ rows: [{ result: 'success' }] });
+
+      const result = await query('SELECT 1');
+      
+      expect(result.rows[0].result).toBe('success');
+      expect(mockQuery).toHaveBeenCalledTimes(2);
+    });
+
+    test('should retry on connection terminated error', async () => {
+      const terminatedError = new Error('Connection terminated unexpectedly');
+      
+      mockQuery
+        .mockRejectedValueOnce(terminatedError)
+        .mockResolvedValueOnce({ rows: [{ result: 'success' }] });
+
+      const result = await query('SELECT 1');
+      
+      expect(result.rows[0].result).toBe('success');
+      expect(mockQuery).toHaveBeenCalledTimes(2);
+    });
+
+    test('should fail after max retries (5 attempts)', async () => {
+      const connectionError = new Error('Connection refused');
+      connectionError.code = 'ECONNREFUSED';
+      
+      mockQuery.mockRejectedValue(connectionError);
+
+      await expect(query('SELECT 1')).rejects.toThrow('Connection refused');
+      
+      // Initial attempt + 5 retries = 6 total calls
+      expect(mockQuery).toHaveBeenCalledTimes(6);
+    });
+
+    test('should use exponential backoff for retries', async () => {
+      const connectionError = new Error('Connection refused');
+      connectionError.code = 'ECONNREFUSED';
+      
+      const startTime = Date.now();
+      
+      mockQuery
+        .mockRejectedValueOnce(connectionError)
+        .mockRejectedValueOnce(connectionError)
+        .mockResolvedValueOnce({ rows: [{ result: 'success' }] });
+
+      await query('SELECT 1');
+      
+      const duration = Date.now() - startTime;
+      
+      // First retry: 2000ms, second retry: 4000ms = 6000ms total minimum
+      // Allow some tolerance for test execution time
+      expect(duration).toBeGreaterThanOrEqual(5900);
+    });
+
+    test('should not retry on non-retryable errors', async () => {
+      const syntaxError = new Error('Syntax error');
+      syntaxError.code = '42601';
+      
+      mockQuery.mockRejectedValueOnce(syntaxError);
+
+      await expect(query('SELECT invalid')).rejects.toThrow('Syntax error');
+      
+      // Should only attempt once (no retries)
+      expect(mockQuery).toHaveBeenCalledTimes(1);
+    });
   });
 
-  test('warmupConnection reuses a single in-flight connection check', async () => {
-    mockPool.query.mockResolvedValue({ rows: [], rowCount: 1 });
+  describe('Connection Timeout Handling', () => {
+    test('should handle connection timeout', async () => {
+      const timeoutError = new Error('Connection timeout');
+      timeoutError.code = 'ETIMEDOUT';
+      
+      mockQuery.mockRejectedValue(timeoutError);
 
-    await Promise.all([db.warmupConnection(), db.warmupConnection()]);
+      await expect(query('SELECT 1')).rejects.toThrow('Connection timeout');
+    });
 
-    expect(mockPool.query).toHaveBeenCalledTimes(1);
-    expect(mockPool.query).toHaveBeenCalledWith('SELECT 1');
+    test('should handle DNS lookup failure', async () => {
+      const dnsError = new Error('DNS lookup failed');
+      dnsError.code = 'ENOTFOUND';
+      
+      mockQuery
+        .mockRejectedValueOnce(dnsError)
+        .mockResolvedValueOnce({ rows: [{ result: 'success' }] });
+
+      const result = await query('SELECT 1');
+      
+      expect(result.rows[0].result).toBe('success');
+    });
   });
 
-  test('getDatabaseStatus reports missing configuration', async () => {
-    delete process.env.DATABASE_URL;
+  describe('Database Status', () => {
+    test('should return not configured when DATABASE_URL missing', async () => {
+      delete process.env.DATABASE_URL;
+      
+      const status = await getDatabaseStatus();
+      
+      expect(status.connected).toBe(false);
+      expect(status.configured).toBe(false);
+      expect(status.message).toBe('DATABASE_URL is not configured');
+    });
 
-    await expect(db.getDatabaseStatus()).resolves.toEqual(
-      expect.objectContaining({
-        connected: false,
-        configured: false,
-      })
-    );
+    test('should return connected when warmup succeeds', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [{ result: 1 }] });
+      
+      const status = await getDatabaseStatus();
+      
+      expect(status.connected).toBe(true);
+      expect(status.configured).toBe(true);
+      expect(status.message).toBe('Database connection is ready');
+    });
+
+    test('should return not connected when warmup fails', async () => {
+      const connectionError = new Error('Connection refused');
+      connectionError.code = 'ECONNREFUSED';
+      mockQuery.mockRejectedValue(connectionError);
+      
+      const status = await getDatabaseStatus();
+      
+      expect(status.connected).toBe(false);
+      expect(status.configured).toBe(true);
+      expect(status.message).toContain('Connection refused');
+    });
   });
 
-  test('closePool shuts down the pool', async () => {
-    db.initializePool();
-    mockPool.end.mockResolvedValueOnce();
-    await db.closePool();
-    expect(mockPool.end).toHaveBeenCalled();
-  });
+  describe('isDatabaseConfigured', () => {
+    test('should return true when DATABASE_URL is set', () => {
+      expect(isDatabaseConfigured()).toBe(true);
+    });
 
-  test('pool size is 15 for Vercel Hobby (Supabase Free)', async () => {
-    jest.resetModules();
-    process.env.VERCEL = 'true';
-    delete process.env.SUPABASE_PRO;
-    const dbVercel = await import('../db.js');
-    dbVercel.initializePool();
-    
-    expect(MockPool).toHaveBeenCalledWith(
-      expect.objectContaining({
-        max: 15, // Vercel Hobby + Supabase Free
-      })
-    );
-    await dbVercel.closePool();
-  });
-
-  test('pool size is 50 for Vercel Pro (Supabase Pro)', async () => {
-    jest.resetModules();
-    process.env.VERCEL = 'true';
-    process.env.SUPABASE_PRO = 'true';
-    const dbVercel = await import('../db.js');
-    dbVercel.initializePool();
-    
-    expect(MockPool).toHaveBeenCalledWith(
-      expect.objectContaining({
-        max: 50, // Vercel Pro + Supabase Pro
-      })
-    );
-    await dbVercel.closePool();
-  });
-
-  test('pool size is 20 for local development', async () => {
-    jest.resetModules();
-    delete process.env.VERCEL;
-    const dbLocal = await import('../db.js');
-    dbLocal.initializePool();
-    
-    expect(MockPool).toHaveBeenCalledWith(
-      expect.objectContaining({
-        max: 20, // Local development
-      })
-    );
-    await dbLocal.closePool();
+    test('should return false when DATABASE_URL is not set', () => {
+      delete process.env.DATABASE_URL;
+      expect(isDatabaseConfigured()).toBe(false);
+    });
   });
 });

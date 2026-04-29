@@ -10,8 +10,7 @@ import {
   loginWithOAuth,
   register,
 } from '../services/authService.js';
-// Rate limiting removed - ZERO CONSTRAINTS for Vercel deployment
-// import { authLimiter } from '../middleware/security.js';
+import { authLimiter } from '../middleware/security.js';
 import { warmupConnection } from '../utils/db.js';
 
 const router = Router();
@@ -147,12 +146,14 @@ function getSafeNext(nextPath) {
 }
 
 function serializeCookie(req, name, value, maxAgeSeconds = 1200) {
-  const isSecure = getForwardedProto(req) === 'https' || process.env.VERCEL === '1';
+  const isSecure = getForwardedProto(req) === 'https' || process.env.RENDER === 'true';
+  // Don't set domain - let browser use current host (devarena.onrender.com)
+  // Setting .onrender.com would be rejected as a public suffix domain
   return `${name}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSeconds}${isSecure ? '; Secure' : ''}`;
 }
 
 function clearCookie(req, name) {
-  const isSecure = getForwardedProto(req) === 'https' || process.env.VERCEL === '1';
+  const isSecure = getForwardedProto(req) === 'https' || process.env.RENDER === 'true';
   return `${name}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${isSecure ? '; Secure' : ''}`;
 }
 
@@ -331,7 +332,8 @@ async function handleOAuthCallback(req, res, provider) {
 router.post(
   '/register',
   requireAuthDatabase,
-  // authLimiter removed - ZERO CONSTRAINTS for Vercel deployment
+  // Apply auth rate limiter only in production on Render
+  ...(process.env.NODE_ENV === 'production' && process.env.RENDER ? [authLimiter] : []),
   [
     body('username').trim().isLength({ min: 3 }),
     body('email').isEmail(),
@@ -359,7 +361,8 @@ router.post(
 router.post(
   '/login',
   requireAuthDatabase,
-  // authLimiter removed - ZERO CONSTRAINTS for Vercel deployment
+  // Apply auth rate limiter only in production on Render
+  ...(process.env.NODE_ENV === 'production' && process.env.RENDER ? [authLimiter] : []),
   [body('email').isEmail(), body('password').isLength({ min: 1 })],
   async (req, res, next) => {
     if (!handleValidation(req, res)) {

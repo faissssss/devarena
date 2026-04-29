@@ -8,7 +8,7 @@
   </p>
   
   <p align="center">
-    <a href="https://devarena.vercel.app" target="_blank">🚀 Live Demo</a> •
+    <a href="https://devarena.onrender.com" target="_blank">🚀 Live Demo</a> •
     <a href="#-features">Features</a> •
     <a href="#%EF%B8%8F-tech-stack">Tech Stack</a> •
     <a href="#-architecture">Architecture</a>
@@ -114,46 +114,47 @@ npm run dev
 
 ## 🚢 Deployment
 
-### Deploy to Vercel (Recommended)
+### Deploy to Render (Recommended)
 
-```bash
-# Install Vercel CLI
-npm install -g vercel
+DevArena is optimized for deployment on Render's container-based platform, which provides:
+- **Stable database connections** through persistent containers
+- **Reliable OAuth authentication** with consistent routing
+- **Simplified build process** with straightforward dependency installation
+- **Automatic deployments** on git push
 
-# Deploy
-vercel
+**Quick Deploy:**
+1. Create a Render account at https://render.com
+2. Connect your GitHub repository
+3. Configure environment variables (see below)
+4. Deploy with one click
 
-# Configure environment variables in Vercel Dashboard
-# Then deploy to production
-vercel --prod
-```
+**Detailed Deployment Guide:**
+See [RENDER_DEPLOYMENT_GUIDE.md](RENDER_DEPLOYMENT_GUIDE.md) for comprehensive deployment instructions, OAuth configuration, troubleshooting, and monitoring setup.
 
 **Environment Variables Required:**
-- `DATABASE_URL` - PostgreSQL connection string (use Supabase/Neon/Railway)
-  - **IMPORTANT**: For Vercel/serverless, use Supabase pooler URL: `postgresql://...@aws-0-us-west-1.pooler.supabase.com:6543/postgres`
-  - Direct URL format causes connection exhaustion in serverless environments
+- `DATABASE_URL` - PostgreSQL connection string (use Supabase direct connection)
+  - **IMPORTANT**: For Render, use direct connection (port 5432): `postgresql://...@db.<project>.supabase.co:5432/postgres`
+  - Do NOT use pooler URL - Render's persistent container uses direct connections
 - `JWT_SECRET` - Generate with: `openssl rand -hex 32`
 - `CLIST_API_KEY` - Get from [clist.by](https://clist.by/)
-- `CORS_ORIGIN` - Your Vercel domain (e.g., `https://your-app.vercel.app`)
-- `APP_URL` - Your Vercel domain (e.g., `https://your-app.vercel.app`)
-- `API_URL` - Your Vercel domain (e.g., `https://your-app.vercel.app`)
+- `CORS_ORIGIN` - Your Render domain (e.g., `https://devarena.onrender.com`)
+- `APP_URL` - Your Render domain (e.g., `https://devarena.onrender.com`)
+- `API_URL` - Your Render domain (e.g., `https://devarena.onrender.com`)
 - `GOOGLE_CLIENT_ID` - From Google Cloud Console
 - `GOOGLE_CLIENT_SECRET` - From Google Cloud Console
 - `GITHUB_CLIENT_ID` - From GitHub Developer Settings
 - `GITHUB_CLIENT_SECRET` - From GitHub Developer Settings
 - `NODE_ENV=production`
+- **Note**: Do NOT manually set `PORT` - Render auto-injects this
 
 **OAuth Configuration:**
-- Google Console: Set redirect URI to `https://your-app.vercel.app/api/auth/oauth/google/callback`
-- GitHub Settings: Set callback URL to `https://your-app.vercel.app/api/auth/oauth/github/callback`
+- Google Console: Set redirect URI to `https://devarena.onrender.com/api/auth/oauth/google/callback`
+- GitHub Settings: Set callback URL to `https://devarena.onrender.com/api/auth/oauth/github/callback`
 
 **Database Options for Production:**
-- [Supabase](https://supabase.com) - Recommended, free tier available (use pooler URL for serverless)
+- [Supabase](https://supabase.com) - Recommended, free tier available (use direct connection for Render)
 - [Neon.tech](https://neon.tech) - Serverless PostgreSQL
 - [Railway](https://railway.app) - Simple setup
-
-**Detailed Deployment Guide:**
-See [.kiro/specs/vercel-stabilization/DEPLOYMENT_GUIDE.md](.kiro/specs/vercel-stabilization/DEPLOYMENT_GUIDE.md) for comprehensive deployment instructions, configuration requirements, and troubleshooting.
 
 ### Other Deployment Options
 
