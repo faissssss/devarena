@@ -7,7 +7,7 @@
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
     "build": "npm run install:all && cd frontend && npm run build",
-    "start": "cd backend && npm run start:prod",
+    "start": "cd backend && npm run start",
     "start:prod": "cd backend && NODE_ENV=production node src/server.js",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
   },
