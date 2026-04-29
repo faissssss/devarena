@@ -1,0 +1,45 @@
+# Dependencies
+node_modules
+backend/node_modules
+frontend/node_modules
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Build outputs (except frontend/dist which is needed)
+backend/dist
+
+# Test files
+**/__tests__
+**/*.test.js
+**/*.test.jsx
+**/*.spec.js
+**/*.spec.jsx
+**/test
+**/tests
+
+# Development files
+*.log
+.DS_Store
+.vscode
+.idea
+
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+*.md
+!backend/migrations/*.md
+
+# Scripts (not needed for deployment)
+scripts
+backend/scripts/*.js
+!backend/scripts/startup.js
+
+# Render-specific files
+render.yaml
+RENDER_DEPLOYMENT_GUIDE.md

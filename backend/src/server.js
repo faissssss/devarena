@@ -160,8 +160,8 @@ export function createApp() {
   console.log('  /api/admin/*');
   console.log('  /api/users/*');
 
-  // Serve static frontend files in production
-  if (process.env.NODE_ENV === 'production') {
+  // Serve static frontend files in production (not on Vercel - Vercel handles this)
+  if (process.env.NODE_ENV === 'production' && !process.env.VERCEL) {
     const frontendDistPath = path.join(__dirname, '../../frontend/dist');
     app.use(express.static(frontendDistPath));
     

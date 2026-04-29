@@ -19,23 +19,47 @@ for (const envPath of [
 }
 
 const { Pool } = pg;
-// Railway container deployment: 20 connections (Railway PostgreSQL supports this)
+
+// Vercel serverless: 2 connections (minimize connection usage per instance)
+// Render/Railway container: 20 connections (direct PostgreSQL connection)
 // Local Development: 20 connections (reasonable for local testing)
-const DEFAULT_POOL_SIZE = '20';
+const DEFAULT_POOL_SIZE = process.env.VERCEL ? '2' : '20';
+
+// CRITICAL: Enforce Supabase pooler URL on Vercel (hard failure, not warning)
+if (process.env.VERCEL && process.env.DATABASE_URL) {
+  // Check for direct connection (port 5432) - this WILL cause connection exhaustion
+  if (process.env.DATABASE_URL.includes(':5432')) {
+    throw new Error(
+      'FATAL: Direct Supabase connection (port 5432) not allowed on Vercel serverless.\n' +
+      'Use Supabase pooler URL instead:\n' +
+      'postgresql://user:password@aws-0-us-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true\n' +
+      'Get pooler URL from: Supabase Dashboard → Settings → Database → Connection Pooling'
+    );
+  }
+  
+  // Check for missing pgbouncer parameter
+  if (process.env.DATABASE_URL.includes(':6543') && !process.env.DATABASE_URL.includes('pgbouncer=true')) {
+    throw new Error(
+      'FATAL: Supabase pooler URL must include ?pgbouncer=true parameter.\n' +
+      'Example: postgresql://user:password@aws-0-us-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true\n' +
+      'This parameter is required for prepared statements to work correctly on serverless.'
+    );
+  }
+}
 
 /**
  * Database connection configuration
  */
 const dbConfig = {
   connectionString: process.env.DATABASE_URL,
-  // Connection pool settings - MAXIMIZED within platform limits
+  // Connection pool settings - optimized for platform
   max: parseInt(process.env.DB_POOL_SIZE || DEFAULT_POOL_SIZE, 10), // Maximum number of clients in the pool
-  idleTimeoutMillis: 60000, // Close idle clients after 60 seconds (increased from 30s)
-  connectionTimeoutMillis: 30000, // Return an error after 30 seconds if connection cannot be established (increased from 10s)
+  idleTimeoutMillis: 60000, // Close idle clients after 60 seconds
+  connectionTimeoutMillis: 30000, // Return an error after 30 seconds if connection cannot be established
   statement_timeout: 30000, // Prevent query timeouts - 30 seconds
-  // Retry settings - MAXIMIZED for better resilience
-  maxRetries: parseInt(process.env.SYNC_RETRIES || '5', 10), // Increased from 3 to 5 retries
-  retryDelay: 2000, // Initial retry delay in milliseconds (increased from 1s to 2s)
+  // Retry settings
+  maxRetries: parseInt(process.env.SYNC_RETRIES || '5', 10),
+  retryDelay: 2000, // Initial retry delay in milliseconds
 };
 
 /**
