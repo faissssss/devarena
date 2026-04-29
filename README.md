@@ -8,7 +8,7 @@
   </p>
   
   <p align="center">
-    <a href="https://devarena-rust.vercel.app" target="_blank">🚀 Live Demo</a> •
+    <a href="https://devarena-2026.vercel.app" target="_blank">🚀 Live Demo</a> •
     <a href="#-features">Features</a> •
     <a href="#%EF%B8%8F-tech-stack">Tech Stack</a> •
     <a href="#-architecture">Architecture</a>
@@ -129,51 +129,32 @@ vercel --prod
 ```
 
 **Environment Variables Required:**
-- `DATABASE_URL` - PostgreSQL connection string (use Supabase pooler for Vercel)
-  - **CRITICAL FOR VERCEL**: Use Supabase pooler URL with pgbouncer parameter:
-    `postgresql://user:password@aws-0-us-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true`
-  - Direct connection (port 5432) will cause FATAL error on Vercel serverless
-  - Get pooler URL from: Supabase Dashboard → Settings → Database → Connection Pooling
+- `DATABASE_URL` - PostgreSQL connection string with Supabase pooler
+  - **Format**: `postgresql://user:password@aws-0-us-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true`
+  - Get from: Supabase Dashboard → Settings → Database → Connection Pooling
 - `JWT_SECRET` - Generate with: `openssl rand -hex 32`
 - `CLIST_API_KEY` - Get from [clist.by](https://clist.by/)
-- `CORS_ORIGIN` - Your Vercel domain (e.g., `https://your-app.vercel.app`)
-- `APP_URL` - Your Vercel domain (e.g., `https://your-app.vercel.app`)
-- `API_URL` - Your Vercel domain (e.g., `https://your-app.vercel.app`)
+- `CORS_ORIGIN` - Your Vercel domain (e.g., `https://devarena-2026.vercel.app`)
+- `APP_URL` - Your Vercel domain (e.g., `https://devarena-2026.vercel.app`)
+- `API_URL` - Your Vercel domain (e.g., `https://devarena-2026.vercel.app`)
 - `GOOGLE_CLIENT_ID` - From Google Cloud Console
 - `GOOGLE_CLIENT_SECRET` - From Google Cloud Console
 - `GITHUB_CLIENT_ID` - From GitHub Developer Settings
 - `GITHUB_CLIENT_SECRET` - From GitHub Developer Settings
-- `CRON_SECRET` - Random string for cron job authentication (generate with: `openssl rand -hex 32`)
+- `CRON_SECRET` - Generate with: `openssl rand -hex 32`
 - `NODE_ENV=production`
 
 **OAuth Configuration:**
-- Google Console: Set redirect URI to `https://your-app.vercel.app/api/auth/oauth/google/callback`
-- GitHub Settings: Set callback URL to `https://your-app.vercel.app/api/auth/oauth/github/callback`
+- Google Console: Set redirect URI to `https://devarena-2026.vercel.app/api/auth/oauth/google/callback`
+- GitHub Settings: Set callback URL to `https://devarena-2026.vercel.app/api/auth/oauth/github/callback`
 
 **Database Options for Production:**
-- [Supabase](https://supabase.com) - Recommended, free tier available (use pooler URL for serverless)
+- [Supabase](https://supabase.com) - Recommended, free tier available
 - [Neon.tech](https://neon.tech) - Serverless PostgreSQL
 - [Railway](https://railway.app) - Simple setup
 
 **Detailed Deployment Guide:**
-See [VERCEL_DEPLOYMENT_GUIDE.md](VERCEL_DEPLOYMENT_GUIDE.md) for comprehensive deployment instructions, configuration requirements, and troubleshooting.
-
-### Alternative: Deploy to Render
-
-If you prefer container-based deployment, see [RENDER_DEPLOYMENT_GUIDE.md](RENDER_DEPLOYMENT_GUIDE.md) for instructions on deploying to Render.
-
-### Other Deployment Options
-
-**Docker:**
-```bash
-docker-compose -f docker-compose.prod.yml up -d
-```
-
-**Manual:**
-```bash
-cd frontend && npm run build
-cd ../backend && NODE_ENV=production node src/server.js
-```
+See [VERCEL_DEPLOYMENT_GUIDE.md](VERCEL_DEPLOYMENT_GUIDE.md) for comprehensive deployment instructions.
 
 ## 📝 License
 
@@ -187,4 +168,3 @@ MIT License
 
 ---
 
-**Built with ❤️ for the developer community**

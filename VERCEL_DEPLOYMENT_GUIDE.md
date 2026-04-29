@@ -71,8 +71,8 @@ Before deploying to Vercel, ensure you have:
    - Name: "DevArena Production"
 
 4. **Configure Authorized Origins and Redirect URIs**:
-   - Authorized JavaScript origins: `https://your-app.vercel.app`
-   - Authorized redirect URIs: `https://your-app.vercel.app/api/auth/oauth/google/callback`
+   - Authorized JavaScript origins: `https://devarena-2026.vercel.app`
+   - Authorized redirect URIs: `https://devarena-2026.vercel.app/api/auth/oauth/google/callback`
    - Click "Create"
 
 5. **Save Credentials**:
@@ -87,8 +87,8 @@ Before deploying to Vercel, ensure you have:
 
 2. **Configure OAuth App**:
    - Application name: "DevArena Production"
-   - Homepage URL: `https://your-app.vercel.app`
-   - Authorization callback URL: `https://your-app.vercel.app/api/auth/oauth/github/callback`
+   - Homepage URL: `https://devarena-2026.vercel.app`
+   - Authorization callback URL: `https://devarena-2026.vercel.app/api/auth/oauth/github/callback`
    - Click "Register application"
 
 3. **Generate Client Secret**:
@@ -141,9 +141,9 @@ JWT_EXPIRES_IN=7d
 
 ```bash
 NODE_ENV=production
-CORS_ORIGIN=https://your-app.vercel.app
-APP_URL=https://your-app.vercel.app
-API_URL=https://your-app.vercel.app
+CORS_ORIGIN=https://devarena-2026.vercel.app
+APP_URL=https://devarena-2026.vercel.app
+API_URL=https://devarena-2026.vercel.app
 ```
 **Note**: Replace `your-app` with your actual Vercel project name
 
@@ -202,7 +202,7 @@ LOG_LEVEL=info
 
 3. **Verify Deployment**:
    - Once deployment completes, Vercel will show "Ready" status
-   - Your application will be available at: `https://your-app.vercel.app`
+   - Your application will be available at: `https://devarena-2026.vercel.app`
 
 ### Subsequent Deployments
 
@@ -214,7 +214,7 @@ LOG_LEVEL=info
 ### 1. Health Check
 
 ```bash
-curl https://your-app.vercel.app/api/health
+curl https://devarena-2026.vercel.app/api/health
 ```
 
 Expected response:
@@ -231,7 +231,7 @@ Expected response:
 
 ### 2. Frontend Access
 
-- Open: https://your-app.vercel.app
+- Open: https://devarena-2026.vercel.app
 - Verify the homepage loads with competition data
 - Check browser console for any errors
 
@@ -267,7 +267,7 @@ Expected response:
 
 **Manual Trigger**:
 ```bash
-curl -X POST https://your-app.vercel.app/api/cron-sync \
+curl -X POST https://devarena-2026.vercel.app/api/cron-sync \
   -H "Authorization: Bearer YOUR_CRON_SECRET"
 ```
 
@@ -322,8 +322,8 @@ Expected response:
 **Issue**: "OAuth redirect URI mismatch"
 - **Cause**: Redirect URI in OAuth provider doesn't match application
 - **Solution**: 
-  - Google: Verify redirect URI is `https://your-app.vercel.app/api/auth/oauth/google/callback`
-  - GitHub: Verify callback URL is `https://your-app.vercel.app/api/auth/oauth/github/callback`
+  - Google: Verify redirect URI is `https://devarena-2026.vercel.app/api/auth/oauth/google/callback`
+  - GitHub: Verify callback URL is `https://devarena-2026.vercel.app/api/auth/oauth/github/callback`
 
 **Issue**: "OAuth state mismatch"
 - **Cause**: Cookie not persisted or CSRF protection issue
@@ -341,8 +341,8 @@ Expected response:
 **Issue**: "Origin not allowed by CORS"
 - **Cause**: CORS_ORIGIN environment variable not set correctly
 - **Solution**: 
-  - Verify CORS_ORIGIN=https://your-app.vercel.app
-  - Verify APP_URL=https://your-app.vercel.app
+  - Verify CORS_ORIGIN=https://devarena-2026.vercel.app
+  - Verify APP_URL=https://devarena-2026.vercel.app
   - Redeploy after updating environment variables
 
 **Issue**: "Duplicate CORS headers"
@@ -380,7 +380,7 @@ Expected response:
 Use a service like UptimeRobot to monitor your application:
 
 1. **Create Monitor**:
-   - URL: `https://your-app.vercel.app/api/health`
+   - URL: `https://devarena-2026.vercel.app/api/health`
    - Interval: 5 minutes
    - Alert: Email or SMS on 3 consecutive failures
 
@@ -467,7 +467,7 @@ If deployment fails or causes issues:
    - Click "..." → "Promote to Production"
 
 2. **Verify Rollback**:
-   - Check health endpoint: `https://your-app.vercel.app/api/health`
+   - Check health endpoint: `https://devarena-2026.vercel.app/api/health`
    - Verify frontend loads correctly
    - Test OAuth authentication
 
