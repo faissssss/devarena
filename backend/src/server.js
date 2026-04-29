@@ -68,11 +68,6 @@ export function createApp() {
           return;
         }
 
-        if (/^https:\/\/.*\.vercel\.app$/i.test(origin)) {
-          callback(null, true);
-          return;
-        }
-
         callback(new Error('Origin not allowed by CORS'));
       },
       credentials: true,
@@ -110,7 +105,7 @@ export function createApp() {
         error: {
           code: 'DATABASE_UNAVAILABLE',
           message:
-            'The database is not reachable in this deployment. Verify DATABASE_URL in Vercel and redeploy.',
+            'The database is not reachable in this deployment. Verify DATABASE_URL in Railway and redeploy.',
         },
       });
     }
@@ -137,7 +132,7 @@ export function createApp() {
   console.log('  /api/users/*');
 
   // Serve static frontend files in production
-  if (process.env.NODE_ENV === 'production' && !process.env.VERCEL) {
+  if (process.env.NODE_ENV === 'production') {
     const frontendDistPath = path.join(__dirname, '../../frontend/dist');
     app.use(express.static(frontendDistPath));
     
