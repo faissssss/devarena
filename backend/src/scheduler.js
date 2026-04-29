@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 
 import { syncAll } from './services/dataSyncService.js';
+import logger from './utils/logger.js';
 
 let task = null;
 
@@ -11,9 +12,13 @@ export function startScheduler() {
 
   const schedule = process.env.SYNC_SCHEDULE || '0 */6 * * *';
   task = cron.schedule(schedule, async () => {
-    console.log('Scheduled sync started');
-    const result = await syncAll();
-    console.log('Scheduled sync completed', result);
+    logger.info('Scheduled sync started');
+    try {
+      const result = await syncAll();
+      logger.info('Scheduled sync completed', { result });
+    } catch (error) {
+      logger.error('Scheduled sync failed', { error: error.message, stack: error.stack });
+    }
   });
 
   return task;
